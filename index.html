@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0d14">
+<title>면역학 퀴즈 + 미니게임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sour+Gummy:wght@400;700;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0d14;
+  --surface: #16161f;
+  --surface2: #1e1e2a;
+  --border: rgba(255,255,255,0.08);
+  --accent: #7c6dfa;
+  --accent2: #fa6d9a;
+  --accent3: #6dfabd;
+  --text: #f0f0f8;
+  --text2: rgba(240,240,248,0.55);
+  --text3: rgba(240,240,248,0.28);
+  --correct: #3ddc84;
+  --wrong: #ff5c5c;
+  --r: 16px;
+  --r2: 24px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow:hidden;touch-action:manipulation;}
+
+#app{
+  height:100dvh;
+  display:flex;
+  flex-direction:column;
+  max-width:480px;
+  margin:0 auto;
+  position:relative;
+  overflow:hidden;
+}
+#app::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:linear-gradient(rgba(124,109,250,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,109,250,0.04) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+.screen{display:none;flex-direction:column;height:100dvh;position:relative;z-index:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+.screen.active{display:flex;}
+
+h1{font-family:'Sour Gummy',cursive;font-size:34px;font-weight:900;line-height:1.1;}
+h2{font-family:'Sour Gummy',cursive;font-size:22px;font-weight:700;}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:15px 28px;border-radius:100px;
+  font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;
+  border:none;cursor:pointer;transition:transform .15s,opacity .15s;
+  letter-spacing:-0.3px;
+}
+.btn:active{transform:scale(0.96);}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 24px rgba(124,109,250,0.35);}
+.btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text);}
+.btn-block{width:100%;}
+
+/* ── START ── */
+#screen-start{
+  align-items:center;justify-content:center;
+  padding:2rem 1.5rem;text-align:center;gap:0;
+}
+.logo-icon{
+  width:100px;height:100px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:30px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:48px;margin:0 auto 1.5rem;
+  box-shadow:0 0 48px rgba(124,109,250,0.4);
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.subtitle{font-size:15px;color:var(--text2);margin:8px 0 2rem;line-height:1.6;}
+
+.theme-section{
+  width:100%;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r2);
+  padding:1.25rem;margin-bottom:1.5rem;text-align:left;
+}
+.theme-label{font-size:12px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{
+  padding:8px 16px;border-radius:100px;font-size:13px;font-weight:500;
+  cursor:pointer;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text2);
+  transition:all .2s;user-select:none;
+}
+.chip.on{background:rgba(124,109,250,0.18);border-color:var(--accent);color:var(--accent);}
+.hint{font-size:12px;color:var(--text3);margin-top:10px;}
+
+/* ── QUIZ ── */
+#screen-quiz{padding:0;}
+.quiz-top{
+  padding:1.25rem 1.25rem 0;
+  display:flex;flex-direction:column;gap:12px;
+}
+.quiz-meta{display:flex;align-items:center;justify-content:space-between;}
+.q-tag{
+  font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--accent);background:rgba(124,109,250,0.12);
+  padding:5px 12px;border-radius:100px;
+}
+.score-pill{
+  font-size:13px;font-weight:700;color:var(--accent3);
+  background:rgba(109,250,189,0.1);padding:5px 12px;border-radius:100px;
+}
+.prog-track{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width .4s cubic-bezier(.4,0,.2,1);}
+
+.quiz-body{flex:1;padding:1.25rem;display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
+.cat-label{font-size:12px;color:var(--text3);font-weight:500;}
+.q-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r2);padding:1.5rem;
+}
+.q-text{font-size:17px;line-height:1.65;color:var(--text);font-weight:500;}
+
+.opts{display:flex;flex-direction:column;gap:10px;}
+.opt{
+  width:100%;text-align:left;padding:12px 16px;
+  border-radius:var(--r);font-size:14px;font-weight:500;
+  border:1px solid var(--border);background:var(--surface);
+  color:var(--text);cursor:pointer;transition:all .18s;
+  font-family:'Noto Sans KR',sans-serif;line-height:1.5;
+}
+.opt:active{transform:scale(0.98);}
+.opt:not(.correct):not(.wrong):hover{border-color:var(--accent);background:rgba(124,109,250,0.08);}
+.opt.correct{background:rgba(61,220,132,0.12);border-color:var(--correct);color:var(--correct);}
+.opt.wrong{background:rgba(255,92,92,0.1);border-color:var(--wrong);color:var(--wrong);}
+
+.feedback-box{
+  padding:14px 16px;border-radius:var(--r);
+  font-size:13px;line-height:1.6;
+  display:none;
+}
+.feedback-box.show{display:block;}
+.feedback-box.correct{background:rgba(61,220,132,0.1);border:1px solid rgba(61,220,132,0.2);color:var(--correct);}
+.feedback-box.wrong{background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.2);color:#ff8080;}
+
+.next-btn-wrap{padding:0 1.25rem 1.5rem;display:none;}
+.next-btn-wrap.show{display:block;}
+
+/* ── MINIGAME INTRO ── */
+#screen-mg-intro{align-items:center;justify-content:center;padding:2rem 1.5rem;text-align:center;}
+.mg-badge{
+  font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--accent2);background:rgba(250,109,154,0.12);
+  padding:6px 14px;border-radius:100px;margin-bottom:1.5rem;
+  display:inline-block;
+}
+.mg-icon{font-size:72px;margin-bottom:1rem;animation:pop .4s cubic-bezier(.3,1.6,.5,1);}
+@keyframes pop{from{transform:scale(0.3);opacity:0;}to{transform:scale(1);opacity:1;}}
+.mg-title{margin-bottom:8px;}
+.mg-desc{margin-bottom:2rem;}
+
+/* ── SHARED ── */
+.game-header{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.back-btn{width:36px;height:36px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;}
+.game-stat{background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:5px 14px;font-size:13px;font-weight:700;color:var(--text);}
+.game-timer{color:var(--accent2);}
+
+/* ── WHACK A MOLE ── */
+#screen-mole{padding:1.25rem;gap:12px;display:none;flex-direction:column;}
+#screen-mole.active{display:flex;}
+.mole-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:1;}
+.hole{
+  aspect-ratio:1;border-radius:var(--r2);
+  background:var(--surface);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:40px;cursor:pointer;user-select:none;
+  transition:transform .08s,background .12s;
+  position:relative;overflow:hidden;
+}
+.hole:active{transform:scale(0.88);}
+.hole.has-mole{background:rgba(124,109,250,0.1);border-color:rgba(124,109,250,0.5);}
+.hole.hit{background:rgba(61,220,132,0.15);border-color:var(--correct);}
+.hole.miss{background:rgba(255,92,92,0.1);border-color:var(--wrong);}
+.mole-emoji{font-size:38px;display:block;animation:moleUp .18s cubic-bezier(.3,1.5,.5,1);}
+@keyframes moleUp{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.hit-fx{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;pointer-events:none;animation:hitPop .35s forwards;}
+@keyframes hitPop{0%{transform:scale(0.5);opacity:1;}100%{transform:scale(2.2);opacity:0;}}
+.mole-result{text-align:center;font-size:15px;color:var(--text2);min-height:32px;flex-shrink:0;}
+
+/* ── BUBBLE ── */
+#screen-bubble{padding:1.25rem;gap:12px;display:none;flex-direction:column;}
+#screen-bubble.active{display:flex;}
+#bubble-field{
+  flex:1;border-radius:var(--r2);border:1px solid var(--border);
+  background:var(--surface);position:relative;overflow:hidden;
+  min-height:300px;touch-action:none;
+}
+.bubble{
+  position:absolute;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;cursor:pointer;user-select:none;
+  border:2px solid rgba(255,255,255,0.18);
+  animation:bubbleFloat ease-in-out infinite;
+}
+.bubble:active{transform:scale(0.8);}
+@keyframes bubbleFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.bubble.pop{animation:bubblePop .25s forwards!important;}
+@keyframes bubblePop{0%{transform:scale(1);opacity:1;}60%{transform:scale(1.6);opacity:0.5;}100%{transform:scale(0);opacity:0;}}
+.bubble-result{text-align:center;font-size:15px;color:var(--text2);min-height:32px;flex-shrink:0;}
+
+/* ── RESULT ── */
+#screen-result{align-items:center;justify-content:center;padding:2rem 1.5rem;text-align:center;gap:0;}
+.result-emoji{font-size:72px;margin-bottom:1rem;display:block;}
+.result-title{margin-bottom:8px;}
+.result-sub{font-size:15px;color:var(--text2);margin-bottom:2rem;}
+.stats-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  width:100%;margin-bottom:2rem;
+}
+.stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r2);padding:1.25rem 1rem;
+}
+.stat-label{font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;}
+.stat-val{font-size:26px;font-weight:900;font-family:'Sour Gummy',cursive;color:var(--text);}
+.result-btns{display:flex;flex-direction:column;gap:10px;width:100%;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ─── START ─── -->
+<div class="screen active" id="screen-start">
+  <div class="logo-icon">🧬</div>
+  <h1 class="font-display">면역학<br>퀴즈</h1>
+  <p class="subtitle">인체생리학 Chapter 5<br>총 10문항 · 5지선다</p>
+
+  <div class="theme-section">
+    <div class="theme-label">미니게임</div>
+    <div class="chips">
+      <span class="chip on" data-t="mole">🐹 두더지 잡기</span>
+      <span class="chip on" data-t="bubble">🫧 버블 터뜨리기</span>
+    </div>
+    <p class="hint">문제 2개마다 미니게임 1번 등장해요</p>
+  </div>
+
+  <button class="btn btn-primary btn-block" onclick="startGame()">게임 시작 →</button>
+</div>
+
+<!-- ─── QUIZ ─── -->
+<div class="screen" id="screen-quiz">
+  <div class="quiz-top">
+    <div class="quiz-meta">
+      <span class="q-tag" id="q-tag">문제 1 / 6</span>
+      <span class="score-pill" id="score-display">0점</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+  <div class="quiz-body">
+    <span class="cat-label" id="q-cat">분야</span>
+    <div class="q-box"><p class="q-text" id="q-text">...</p></div>
+    <div class="opts" id="opts"></div>
+    <div class="feedback-box" id="feedback"></div>
+  </div>
+  <div class="next-btn-wrap" id="next-wrap">
+    <button class="btn btn-primary btn-block" onclick="nextQuestion()">다음 →</button>
+  </div>
+</div>
+
+<!-- ─── MINIGAME INTRO ─── -->
+<div class="screen" id="screen-mg-intro">
+  <div class="mg-badge">미니게임 타임!</div>
+  <div class="mg-icon" id="mg-icon">🎯</div>
+  <h2 class="mg-title" id="mg-title">미니게임</h2>
+  <p class="mg-desc" id="mg-desc">잠깐 쉬어가요!</p>
+  <button class="btn btn-primary btn-block" onclick="launchMinigame()">도전! →</button>
+</div>
+
+<!-- ─── WHACK A MOLE ─── -->
+<div class="screen" id="screen-mole">
+  <div class="game-header">
+    <div class="back-btn" onclick="finishMG()">←</div>
+    <h2 style="flex:1">두더지 잡기 🐹</h2>
+    <span class="game-stat game-timer" id="mole-timer">15</span>
+    <span class="game-stat" id="mole-score">0점</span>
+  </div>
+  <div class="mole-grid" id="mole-grid"></div>
+  <div class="mole-result" id="mole-result"></div>
+  <button class="btn btn-ghost btn-block" id="mole-cont" style="display:none;flex-shrink:0" onclick="finishMG()">계속 퀴즈 풀기 →</button>
+</div>
+
+<!-- ─── BUBBLE ─── -->
+<div class="screen" id="screen-bubble">
+  <div class="game-header">
+    <div class="back-btn" onclick="finishMG()">←</div>
+    <h2 style="flex:1">버블 터뜨리기 🫧</h2>
+    <span class="game-stat game-timer" id="bubble-timer">15</span>
+    <span class="game-stat" id="bubble-score">0점</span>
+  </div>
+  <div id="bubble-field"></div>
+  <div class="bubble-result" id="bubble-result"></div>
+  <button class="btn btn-ghost btn-block" id="bubble-cont" style="display:none;flex-shrink:0" onclick="finishMG()">계속 퀴즈 풀기 →</button>
+</div>
+
+<!-- ─── RESULT ─── -->
+<div class="screen" id="screen-result">
+  <span class="result-emoji" id="res-emoji">🏆</span>
+  <h1 class="result-title font-display" id="res-title">완료!</h1>
+  <p class="result-sub" id="res-sub">수고했어요!</p>
+  <div class="stats-grid">
+    <div class="stat"><div class="stat-label">정답</div><div class="stat-val" id="r-correct">0/10</div></div>
+    <div class="stat"><div class="stat-label">점수</div><div class="stat-val" id="r-score">0</div></div>
+    <div class="stat"><div class="stat-label">정답률</div><div class="stat-val" id="r-rate">0%</div></div>
+    <div class="stat"><div class="stat-label">미니게임</div><div class="stat-val" id="r-mini">0회</div></div>
+  </div>
+
+  <!-- 합격 → 강의평가 블록 -->
+  <div id="survey-block" style="display:none;width:100%;margin-bottom:12px;">
+    <div style="background:rgba(109,250,189,0.08);border:1px solid rgba(109,250,189,0.25);border-radius:var(--r2);padding:1.25rem;text-align:center;margin-bottom:12px;">
+      <div style="font-size:22px;margin-bottom:6px;">🎓</div>
+      <div style="font-size:13px;font-weight:700;color:var(--accent3);margin-bottom:4px;">8문항 이상 통과!</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;">강의평가를 완료해야<br>최종 수료가 인정됩니다.</div>
+    </div>
+    <a id="survey-link"
+       href="https://docs.google.com/forms/d/e/1FAIpQLSdD-n7SnUw7FbXhHiJbmTHrj3tAE3N3NcqOw1_5w9oxFXRaGg/viewform?usp=publish-editor"
+       target="_blank"
+       class="btn btn-primary btn-block"
+       style="text-decoration:none;font-size:15px;"
+       onclick="markSurveyDone()">
+      📝 강의평가 하러 가기 →
+    </a>
+    <div id="survey-done-msg" style="display:none;margin-top:10px;text-align:center;font-size:13px;color:var(--accent3);font-weight:700;">
+      ✅ 강의평가 완료! 수고하셨습니다 🎉
+    </div>
+  </div>
+
+  <!-- 불합격 → 재도전 블록 -->
+  <div id="fail-block" style="display:none;width:100%;margin-bottom:12px;">
+    <div style="background:rgba(255,92,92,0.07);border:1px solid rgba(255,92,92,0.2);border-radius:var(--r2);padding:1.25rem;text-align:center;">
+      <div style="font-size:22px;margin-bottom:6px;">📚</div>
+      <div style="font-size:13px;font-weight:700;color:var(--wrong);margin-bottom:4px;">8문항 이상 맞아야 강의평가로 이동할 수 있어요</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;">내용을 복습하고 다시 도전해보세요!</div>
+    </div>
+  </div>
+
+  <div class="result-btns">
+    <button class="btn btn-ghost btn-block" onclick="startGame()">다시 풀기</button>
+    <button class="btn btn-ghost btn-block" onclick="goStart()" style="font-size:13px;opacity:0.6;">처음으로</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+/* ─── 문제 데이터 (여기에 추가하세요!) ─── */
+const QUESTIONS = [
+  {
+    cat:'면역학 Ch.5',
+    text:'면역반응(immune response)의 3대 특징으로 옳은 것은?',
+    opts:[
+      '비특이성, 다양성, 신속성',
+      '자기와 비자기의 구별능력, 특이성, 면역학적 기억',
+      '항원인식, 항체생성, 식작용',
+      '체액성, 세포성, 자연면역',
+      '기억, 증폭, 억제'
+    ],
+    ans:1,
+    exp:'면역반응의 3대 특징은 ① 자기와 비자기의 구별능력, ② 특이성, ③ 면역학적 기억입니다.'
+  },
+  {
+    cat:'면역학 Ch.5',
+    text:'비특이적 면역방어의 내부방어기전에 해당하지 않는 것은?',
+    opts:[
+      '염증반응',
+      '대식세포에 의한 식작용',
+      '인터페론(interferon)',
+      '자연살해세포(NK cell)',
+      '피부의 해부학적 장벽'
+    ],
+    ans:4,
+    exp:'피부의 해부학적 장벽은 외부방어기전입니다. 내부방어기전은 염증반응, 식작용, 인터페론, NK세포가 해당합니다.'
+  },
+  {
+    cat:'면역학 Ch.5',
+    text:'염증반응의 5대 소견으로 옳은 것은?',
+    opts:[
+      '발열, 오한, 구토, 설사, 두통',
+      '발적, 부종, 통증, 발열, 기능장애',
+      '출혈, 부종, 발열, 괴사, 경련',
+      '빈혈, 백혈구 증가, 발열, 통증, 발적',
+      '발한, 빈맥, 저혈압, 구역, 발열'
+    ],
+    ans:1,
+    exp:'염증반응의 5대 소견은 발적(redness)·부종(swelling)·통증(pain)·발열(heat)·기능장애(loss of function)입니다.'
+  },
+  {
+    cat:'면역학 Ch.5',
+    text:'B림프구에서 분화하여 항체를 직접 분비하는 세포는?',
+    opts:[
+      '보조 T림프구',
+      '자연살해세포',
+      '형질세포',
+      '대식세포',
+      '호중구'
+    ],
+    ans:2,
+    exp:'B림프구는 항원 자극 시 형질세포(plasma cell)와 기억세포로 분화하며, 형질세포가 항체를 직접 분비합니다.'
+  },
+  {
+    cat:'면역학 Ch.5',
+    text:'혈청 내 항체 중 가장 많은 비율을 차지하며 태반을 통과하는 면역글로불린은?',
+    opts:['IgM','IgA','IgE','IgG','IgD'],
+    ans:3,
+    exp:'IgG는 혈청 항체의 약 80%를 차지하며, 태반을 통과하여 태아에게 면역을 부여하고 2차 면역반응에서 주로 생산됩니다.'
+  },
+  {
+    cat:'면역학 Ch.5',
+    text:'세균감염의 초기반응에 중요하며 분자량이 가장 큰 면역글로불린은?',
+    opts:['IgG','IgM','IgA','IgE','IgD'],
+    ans:1,
+    exp:'IgM은 분자량이 900,000으로 가장 크며, 항원 노출 후 가장 먼저 생산(1차 반응)되어 세균감염 초기반응에 중요합니다.'
+  },
+  {
+    cat:'면역학 Ch.5',
+    text:'CD8 표면분자를 가지며 바이러스 감염세포와 암세포를 직접 살해하는 T림프구는?',
+    opts:[
+      '보조 T림프구(Helper T lymphocyte)',
+      '억제 T림프구(Suppressor T lymphocyte)',
+      '기억 T림프구(Memory T lymphocyte)',
+      '살해 T림프구(Killer T lymphocyte)',
+      '자연살해세포(NK cell)'
+    ],
+    ans:3,
+    exp:'살해(세포독성) T림프구는 CD8 표면분자를 가지며, 바이러스 감염세포·암세포·이식조직의 표적세포를 직접 살해합니다.'
+  },
+  {
+    cat:'면역학 Ch.5',
+    text:'즉시형 과민반응(제Ⅰ형)에 관여하는 면역글로불린과 세포의 조합으로 옳은 것은?',
+    opts:[
+      'IgG — 보조 T림프구',
+      'IgM — 대식세포',
+      'IgE — 비만세포',
+      'IgA — 형질세포',
+      'IgD — 자연살해세포'
+    ],
+    ans:2,
+    exp:'제Ⅰ형 과민반응(아나필락시스형)은 IgE가 비만세포·호염기구 표면에 결합하여 히스타민 등 활성화물질을 방출합니다.'
+  },
+  {
+    cat:'면역학 Ch.5',
+    text:'항원에 처음 노출 시 일어나는 1차 면역반응(primary response)으로 옳은 것은?',
+    opts:[
+      'IgG가 먼저 생산되고 이후 IgM이 생산된다',
+      '2차 반응보다 항체가 더 빠르고 많이 생산된다',
+      'IgM이 먼저 생산되고 이후 IgG가 생산된다',
+      '항체 생산 없이 세포성 면역만 작동한다',
+      '기억세포가 즉시 활성화되어 신속히 반응한다'
+    ],
+    ans:2,
+    exp:'1차 반응에서는 IgM이 먼저 생산되고 이후 IgG가 생산됩니다. 2차 반응은 기억세포에 의해 더 빠르고 강하게 일어납니다.'
+  },
+  {
+    cat:'면역학 Ch.5',
+    text:'다음 중 자가면역질환(autoimmune disease)에 해당하지 않는 것은?',
+    opts:[
+      '류마티스관절염(rheumatoid arthritis)',
+      '전신홍반루푸스(SLE)',
+      '제1형 당뇨병(type I diabetes mellitus)',
+      '후천성면역결핍증(AIDS)',
+      '그레이브스병(Grave\'s disease)'
+    ],
+    ans:3,
+    exp:'AIDS는 HIV 바이러스 감염에 의한 후천성 면역결핍질환으로 자가면역질환이 아닙니다. 나머지는 모두 자가면역질환입니다.'
+  },
+];
+
+/* ─── 게임 상태 ─── */
+let S = {};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goStart() {
+  showScreen('screen-start');
+}
+
+function startGame() {
+  const themes = [...document.querySelectorAll('.chip.on')].map(c => c.dataset.t);
+  S = {
+    qIdx: 0, score: 0, correct: 0,
+    answered: false, mgCount: 0,
+    themes: themes.length ? themes : ['mole','bubble'],
+    currentMg: null,
+  };
+  loadQuestion();
+  showScreen('screen-quiz');
+}
+
+/* ─── QUIZ ─── */
+function loadQuestion() {
+  const q = QUESTIONS[S.qIdx];
+  document.getElementById('q-tag').textContent = `문제 ${S.qIdx+1} / ${QUESTIONS.length}`;
+  document.getElementById('score-display').textContent = S.score + '점';
+  document.getElementById('q-cat').textContent = q.cat;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('prog-fill').style.width = (S.qIdx / QUESTIONS.length * 100) + '%';
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback-box'; fb.textContent = '';
+  const nw = document.getElementById('next-wrap');
+  nw.className = 'next-btn-wrap';
+  S.answered = false;
+
+  const oc = document.getElementById('opts');
+  oc.innerHTML = '';
+  const nums = ['①','②','③','④','⑤'];
+  q.opts.forEach((o, i) => {
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.innerHTML = `<span style="color:var(--accent);font-weight:700;margin-right:8px;flex-shrink:0">${nums[i]}</span><span>${o}</span>`;
+    b.style.display = 'flex'; b.style.alignItems = 'flex-start';
+    b.onclick = () => answer(i);
+    oc.appendChild(b);
+  });
+}
+
+function answer(i) {
+  if (S.answered) return;
+  S.answered = true;
+  const q = QUESTIONS[S.qIdx];
+  const btns = document.querySelectorAll('.opt');
+  const fb = document.getElementById('feedback');
+
+  btns.forEach(b => b.onclick = null);
+
+  if (i === q.ans) {
+    btns[i].classList.add('correct');
+    S.score += 100; S.correct++;
+    fb.textContent = '✓ 정답! ' + q.exp;
+    fb.className = 'feedback-box show correct';
+  } else {
+    btns[i].classList.add('wrong');
+    btns[q.ans].classList.add('correct');
+    fb.textContent = '✗ 오답. ' + q.exp;
+    fb.className = 'feedback-box show wrong';
+  }
+  document.getElementById('score-display').textContent = S.score + '점';
+  document.getElementById('next-wrap').className = 'next-btn-wrap show';
+}
+
+function nextQuestion() {
+  S.qIdx++;
+  if (S.qIdx >= QUESTIONS.length) { showResult(); return; }
+  // 4번째, 8번째 문제 직후에만 미니게임 (총 2회)
+  if ((S.qIdx === 4 || S.qIdx === 8) && S.themes.length) {
+    showMGIntro();
+  } else {
+    loadQuestion(); showScreen('screen-quiz');
+  }
+}
+
+/* ─── MINIGAME INTRO ─── */
+function showMGIntro() {
+  const mg = S.themes[S.mgCount % S.themes.length];
+  S.currentMg = mg;
+  const MAP = {
+    mole:   {icon:'🐹', title:'두더지를 잡아라!',   desc:'15초 안에 두더지를 최대한 많이 탭하세요!'},
+    bubble: {icon:'🫧', title:'버블을 터뜨려라!',   desc:'15초 안에 버블을 최대한 많이 터뜨리세요!'},
+  };
+  const m = MAP[mg];
+  document.getElementById('mg-icon').textContent = m.icon;
+  document.getElementById('mg-title').textContent = m.title;
+  document.getElementById('mg-desc').textContent = m.desc;
+  showScreen('screen-mg-intro');
+}
+
+function launchMinigame() {
+  S.mgCount++;
+  if (S.currentMg === 'mole') startMole();
+  else startBubble();
+}
+
+function finishMG() {
+  loadQuestion();
+  showScreen('screen-quiz');
+}
+
+/* ─── WHACK A MOLE ─── */
+let M = {};
+const MOLE_EMOJIS = ['🐹','🐭','🐱'];
+const BOMB_EMOJI  = '💣';
+
+function startMole() {
+  showScreen('screen-mole');
+  M = {score:0, timeLeft:15, interval:null, timer:null, active:{}};
+  document.getElementById('mole-score').textContent = '0점';
+  document.getElementById('mole-timer').textContent = '15';
+  document.getElementById('mole-result').textContent = '';
+  document.getElementById('mole-cont').style.display = 'none';
+
+  // 3x3 구멍 생성
+  const grid = document.getElementById('mole-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 9; i++) {
+    const hole = document.createElement('div');
+    hole.className = 'hole';
+    hole.dataset.idx = i;
+    hole.innerHTML = '<span style="font-size:32px;opacity:0.2">🕳️</span>';
+    hole.onclick = () => whackHole(i);
+    hole.ontouchstart = (e) => { e.preventDefault(); whackHole(i); };
+    grid.appendChild(hole);
+  }
+
+  // 두더지 등장 간격
+  M.interval = setInterval(spawnMole, 700);
+
+  // 카운트다운
+  M.timer = setInterval(() => {
+    M.timeLeft--;
+    document.getElementById('mole-timer').textContent = M.timeLeft;
+    if (M.timeLeft <= 0) endMole();
+  }, 1000);
+}
+
+function spawnMole() {
+  const holes = document.querySelectorAll('.hole');
+  const free = [...holes].filter(h => !M.active[h.dataset.idx]);
+  if (!free.length) return;
+  const hole = free[Math.floor(Math.random() * free.length)];
+  const idx = hole.dataset.idx;
+  const isBomb = Math.random() < 0.18;
+  const emoji = isBomb ? BOMB_EMOJI : MOLE_EMOJIS[Math.floor(Math.random()*MOLE_EMOJIS.length)];
+  M.active[idx] = {isBomb, timeout: null};
+  hole.className = 'hole has-mole';
+  hole.innerHTML = `<span class="mole-emoji">${emoji}</span>`;
+
+  // 자동으로 숨기기
+  M.active[idx].timeout = setTimeout(() => {
+    if (M.active[idx]) {
+      delete M.active[idx];
+      hole.className = 'hole';
+      hole.innerHTML = '<span style="font-size:32px;opacity:0.2">🕳️</span>';
+    }
+  }, 900 + Math.random() * 400);
+}
+
+function whackHole(idx) {
+  if (!M.active[idx] || M.timeLeft <= 0) return;
+  const data = M.active[idx];
+  clearTimeout(data.timeout);
+  delete M.active[idx];
+
+  const hole = document.querySelector(`.hole[data-idx="${idx}"]`);
+  if (data.isBomb) {
+    M.score = Math.max(0, M.score - 30);
+    hole.className = 'hole miss';
+    hole.innerHTML = '<div class="hit-fx">💥</div>';
+  } else {
+    M.score += 10;
+    hole.className = 'hole hit';
+    hole.innerHTML = '<div class="hit-fx">✨</div>';
+  }
+  document.getElementById('mole-score').textContent = M.score + '점';
+  setTimeout(() => {
+    hole.className = 'hole';
+    hole.innerHTML = '<span style="font-size:32px;opacity:0.2">🕳️</span>';
+  }, 350);
+}
+
+function endMole() {
+  clearInterval(M.interval);
+  clearInterval(M.timer);
+  M.timeLeft = 0;
+  document.getElementById('mole-timer').textContent = '0';
+  // 남은 두더지 숨기기
+  Object.keys(M.active).forEach(idx => clearTimeout(M.active[idx].timeout));
+  M.active = {};
+  document.querySelectorAll('.hole').forEach(h => {
+    h.className = 'hole';
+    h.innerHTML = '<span style="font-size:32px;opacity:0.2">🕳️</span>';
+    h.onclick = null; h.ontouchstart = null;
+  });
+  const msg = M.score >= 100 ? '🏆 최고야! 두더지 마스터!' : M.score >= 50 ? '👍 잘 잡았어요!' : '😅 더 빠르게!';
+  document.getElementById('mole-result').innerHTML =
+    `<span style="font-size:22px;font-weight:700;color:var(--accent)">${M.score}점</span>　${msg}`;
+  document.getElementById('mole-cont').style.display = 'block';
+}
+
+/* ─── BUBBLE ─── */
+let B = {};
+const BUBBLE_COLORS = [
+  ['rgba(124,109,250,0.55)','rgba(124,109,250,0.15)'],
+  ['rgba(250,109,154,0.55)','rgba(250,109,154,0.15)'],
+  ['rgba(109,250,189,0.55)','rgba(109,250,189,0.15)'],
+  ['rgba(250,200,109,0.55)','rgba(250,200,109,0.15)'],
+  ['rgba(109,200,250,0.55)','rgba(109,200,250,0.15)'],
+];
+const BUBBLE_EMOJIS = ['🫧','💜','💗','💚','💛','💙','⭐','🌸','🍀','🎈'];
+
+function startBubble() {
+  showScreen('screen-bubble');
+  B = {score:0, timeLeft:15, timer:null, spawnInterval:null, count:0};
+  document.getElementById('bubble-score').textContent = '0점';
+  document.getElementById('bubble-timer').textContent = '15';
+  document.getElementById('bubble-result').textContent = '';
+  document.getElementById('bubble-cont').style.display = 'none';
+  const field = document.getElementById('bubble-field');
+  field.innerHTML = '';
+
+  // 버블 스폰
+  B.spawnInterval = setInterval(spawnBubble, 600);
+  for (let i = 0; i < 6; i++) spawnBubble(); // 초기 버블
+
+  // 카운트다운
+  B.timer = setInterval(() => {
+    B.timeLeft--;
+    document.getElementById('bubble-timer').textContent = B.timeLeft;
+    if (B.timeLeft <= 0) endBubble();
+  }, 1000);
+}
+
+function spawnBubble() {
+  if (B.timeLeft <= 0) return;
+  const field = document.getElementById('bubble-field');
+  const W = field.clientWidth, H = field.clientHeight;
+  const size = 48 + Math.random() * 36;
+  const col = BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)];
+  const emoji = BUBBLE_EMOJIS[Math.floor(Math.random() * BUBBLE_EMOJIS.length)];
+  const x = Math.random() * (W - size);
+  const y = Math.random() * (H - size);
+  const dur = 1.5 + Math.random() * 2;
+
+  B.count++;
+  const id = 'b' + B.count;
+  const div = document.createElement('div');
+  div.className = 'bubble';
+  div.id = id;
+  div.style.cssText = `
+    width:${size}px;height:${size}px;
+    left:${x}px;top:${y}px;
+    background:radial-gradient(circle at 35% 35%, ${col[0]}, ${col[1]});
+    animation-duration:${dur}s;
+    animation-delay:${Math.random()*1}s;
+  `;
+  div.textContent = emoji;
+
+  div.onclick = () => popBubble(div, size);
+  div.ontouchstart = (e) => { e.preventDefault(); popBubble(div, size); };
+  field.appendChild(div);
+
+  // 수명: 3~5초 후 자동 사라짐
+  setTimeout(() => { if (div.parentNode) div.remove(); }, (3 + Math.random() * 2) * 1000);
+}
+
+function popBubble(el, size) {
+  if (B.timeLeft <= 0 || el.classList.contains('pop')) return;
+  el.classList.add('pop');
+  const pts = Math.round(100 - size + 48); // 작을수록 고점수
+  B.score += pts;
+  document.getElementById('bubble-score').textContent = B.score + '점';
+  setTimeout(() => el.remove(), 280);
+}
+
+function endBubble() {
+  clearInterval(B.timer);
+  clearInterval(B.spawnInterval);
+  B.timeLeft = 0;
+  document.getElementById('bubble-timer').textContent = '0';
+  // 남은 버블 팝
+  document.querySelectorAll('.bubble').forEach(b => {
+    b.onclick = null; b.ontouchstart = null;
+    b.classList.add('pop');
+    setTimeout(() => b.remove(), 280);
+  });
+  const msg = B.score >= 200 ? '🏆 버블 마스터!' : B.score >= 100 ? '👍 잘 터뜨렸어요!' : '🫧 더 빠르게!';
+  document.getElementById('bubble-result').innerHTML =
+    `<span style="font-size:22px;font-weight:700;color:var(--accent2)">${B.score}점</span>　${msg}`;
+  document.getElementById('bubble-cont').style.display = 'block';
+}
+
+/* ─── RESULT ─── */
+function showResult() {
+  const total = QUESTIONS.length;
+  const rate = Math.round(S.correct / total * 100);
+  const passed = S.correct >= 8;
+
+  document.getElementById('r-correct').textContent = S.correct + '/' + total;
+  document.getElementById('r-score').textContent = S.score;
+  document.getElementById('r-rate').textContent = rate + '%';
+  document.getElementById('r-mini').textContent = S.mgCount + '회';
+
+  if (passed) {
+    document.getElementById('res-emoji').textContent = '🏆';
+    document.getElementById('res-title').textContent = S.correct === 10 ? '만점!' : '합격!';
+    document.getElementById('res-sub').textContent = S.correct + '문제 정답 · 강의평가를 완료해주세요';
+    document.getElementById('survey-block').style.display = 'block';
+    document.getElementById('fail-block').style.display = 'none';
+  } else {
+    document.getElementById('res-emoji').textContent = '💪';
+    document.getElementById('res-title').textContent = '아쉬워요!';
+    document.getElementById('res-sub').textContent = S.correct + '문제 정답 · 8문제 이상 맞춰야 해요';
+    document.getElementById('survey-block').style.display = 'none';
+    document.getElementById('fail-block').style.display = 'block';
+  }
+  showScreen('screen-result');
+}
+
+function markSurveyDone() {
+  setTimeout(() => {
+    document.getElementById('survey-done-msg').style.display = 'block';
+    document.getElementById('survey-link').style.opacity = '0.5';
+    document.getElementById('survey-link').style.pointerEvents = 'none';
+    document.getElementById('survey-link').textContent = '✅ 강의평가 완료';
+  }, 1000);
+}
+
+/* chip toggle */
+document.querySelectorAll('.chip').forEach(c => {
+  c.onclick = () => c.classList.toggle('on');
+});
+</script>
+</body>
+</html>
