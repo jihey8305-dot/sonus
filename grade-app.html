@@ -284,7 +284,10 @@
     <div class="card fade-up">
       <div class="card-header" style="justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:10px;">📊 <h2>전체 성적 현황</h2></div>
-        <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 전체 초기화</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="exportData()">💾 데이터 저장</button>
+          <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 전체 초기화</button>
+        </div>
       </div>
       <div class="card-body">
         <div class="stats-row" id="admin-stats"></div>
@@ -670,6 +673,35 @@ function showErr(id,msg){ const el=document.getElementById(id); el.textContent=m
 function showSuccess(id,msg){ const el=document.getElementById(id); el.textContent=msg; el.style.display='block'; setTimeout(()=>{el.style.display='none';},4000); }
 function showMsgEl(el,msg,type){ el.textContent=msg; el.className=`alert alert-${type}`; el.style.display='block'; }
 
+// ── GitHub에서 데이터 불러오기 ──
+const REPO_DATA_URL = 'https://jihey8305-dot.github.io/sonus/grade-data.json';
+
+async function loadFromGitHub() {
+  try {
+    const res = await fetch(REPO_DATA_URL + '?t=' + Date.now());
+    if (!res.ok) return; // 파일 없으면 그냥 패스
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      // GitHub 데이터가 있으면 로컬보다 우선 적용
+      students = data;
+      save();
+    }
+  } catch(e) {
+    // 파일 없거나 오류면 로컬 데이터 그대로 사용
+  }
+}
+
+// ── 데이터 JSON으로 내보내기 ──
+function exportData() {
+  if (!students.length) { alert('등록된 학생이 없어요'); return; }
+  const blob = new Blob([JSON.stringify(students, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'grade-data.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 // ── URL 파라미터로 관리자 모드 결정 ──
 (function() {
   const isAdmin = location.search.includes('admin');
@@ -688,15 +720,8 @@ function showMsgEl(el,msg,type){ el.textContent=msg; el.className=`alert alert-$
   }
 })();
 
-// ── 예시 데이터 ──
-if (!students.length) {
-  students=[
-    {id:'20250001',name:'김민지',score:92,birth:'20030512',birthDisplay:'2003/05/12'},
-    {id:'20250002',name:'이준서',score:78,birth:'20021108',birthDisplay:'2002/11/08'},
-    {id:'20250003',name:'박서연',score:85,birth:'20030320',birthDisplay:'2003/03/20'},
-  ];
-  save();
-}
+// ── 시작 시 GitHub에서 데이터 로드 ──
+loadFromGitHub();
 </script>
 </body>
 </html>
