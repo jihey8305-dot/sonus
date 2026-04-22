@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>성적 공개 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- SheetJS for Excel parsing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #f0ede8; --surface: #ffffff; --surface2: #f7f5f2; --border: #e0dbd3;
+    --text: #1a1714; --text-muted: #7a746d; --accent: #2d5a3d; --accent-light: #e8f0ea;
+    --danger: #c0392b; --gold: #c8a84b; --silver: #8a9099; --bronze: #a0714a;
+    --radius: 12px; --shadow: 0 2px 16px rgba(0,0,0,0.08); --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+  .mode-badge { font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; background: var(--accent-light); color: var(--accent); display: none; }
+  .mode-badge.visible { display: block; }
+
+  main { flex: 1; padding: 32px 16px; max-width: 980px; margin: 0 auto; width: 100%; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .card-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .card-header h2 { font-size: 15px; font-weight: 600; }
+  .card-body { padding: 24px; }
+
+  /* Landing */
+  .tab-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .tab-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 32px 24px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .tab-card:hover { border-color: var(--accent); box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+  .tab-card .tab-icon { font-size: 40px; margin-bottom: 14px; }
+  .tab-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .tab-card p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  /* Forms */
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-muted); }
+  input[type=text], input[type=password], input[type=number] {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: inherit; font-size: 14px; background: var(--surface2); color: var(--text); transition: border-color 0.2s; outline: none;
+  }
+  input:focus { border-color: var(--accent); background: white; }
+  .hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+
+  /* 생년월일 슬래시 입력 */
+  .birth-input-wrap { position: relative; }
+  .birth-input-wrap input { font-family: 'DM Mono', monospace; letter-spacing: 1px; }
+  .birth-placeholder { position: absolute; top: 50%; right: 14px; transform: translateY(-50%); font-size: 11px; color: var(--text-muted); pointer-events: none; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 8px; border: none; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #234a31; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #a93226; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-full { width: 100%; justify-content: center; }
+
+  /* 수동 입력 그리드 */
+  .add-grid { display: grid; grid-template-columns: 1.3fr 1fr 0.8fr 1.4fr auto; gap: 10px; align-items: end; }
+
+  /* 엑셀 업로드 영역 */
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 10px; padding: 28px 20px;
+    text-align: center; cursor: pointer; transition: all 0.2s; background: var(--surface2);
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: var(--accent-light); }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-zone h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .upload-zone p { font-size: 12px; color: var(--text-muted); }
+
+  /* 업로드 미리보기 */
+  .preview-table-wrap { max-height: 240px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 16px; }
+  .preview-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .preview-table th { background: var(--surface2); padding: 8px 12px; text-align: left; font-size: 11px; color: var(--text-muted); border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+  .preview-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .preview-table tr:last-child td { border-bottom: none; }
+  .row-ok  td { background: #f0faf2; }
+  .row-err td { background: #fff0f0; color: var(--danger); }
+
+  /* 탭 (수동/엑셀) */
+  .input-tabs { display: flex; gap: 0; margin-bottom: 20px; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .input-tab { flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 500; cursor: pointer; background: var(--surface2); transition: all 0.2s; border: none; font-family: inherit; }
+  .input-tab.active { background: var(--accent); color: white; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: var(--surface2); padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-size: 12px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .rank-1 { background: #fff3cd; color: var(--gold); border: 1.5px solid var(--gold); }
+  .rank-2 { background: #f0f2f4; color: var(--silver); border: 1.5px solid var(--silver); }
+  .rank-3 { background: #fdf0ea; color: var(--bronze); border: 1.5px solid var(--bronze); }
+  .rank-n { background: var(--surface2); color: var(--text-muted); border: 1.5px solid var(--border); }
+
+  .grade-chip { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .grade-A { background: #e8f5e9; color: #2e7d32; }
+  .grade-B { background: #e3f2fd; color: #1565c0; }
+  .grade-C { background: #fff8e1; color: #f57f17; }
+  .grade-D { background: #fce4ec; color: #c62828; }
+  .grade-F { background: #ffebee; color: #b71c1c; }
+
+  .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .score-bar { flex: 1; height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+  .stat-box .val { font-size: 22px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); }
+  .stat-box .lbl { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  /* Student result */
+  .result-hero { text-align: center; padding: 36px 24px 24px; border-bottom: 1px solid var(--border); }
+  .result-name { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .result-id { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; font-family: 'DM Mono', monospace; }
+  .result-score-big { font-size: 72px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); line-height: 1; margin-bottom: 6px; }
+  .result-meta { display: flex; justify-content: center; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
+  .result-meta-item { text-align: center; min-width: 72px; }
+  .result-meta-item .val { font-size: 18px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .result-meta-item .lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Alerts */
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  .alert-error { background: #fdecea; color: var(--danger); border: 1px solid #f5c6c3; }
+  .alert-success { background: var(--accent-light); color: var(--accent); border: 1px solid #c3dcc8; }
+  .info-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #92400e; margin-bottom: 20px; line-height: 1.6; }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .back-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 0.3s ease; }
+
+  @media (max-width: 700px) {
+    .add-grid { grid-template-columns: 1fr 1fr; }
+    .tab-row, .stats-row { grid-template-columns: 1fr 1fr; }
+  }
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📋 성적 공개 시스템</div>
+  <span class="mode-badge" id="modeBadge"></span>
+</header>
+
+<main>
+
+  <!-- 랜딩 -->
+  <div id="page-landing" class="page active">
+    <div style="text-align:center;padding:0 0 28px;">
+      <div style="font-size:14px;color:var(--text-muted);">접속 방식을 선택해주세요</div>
+    </div>
+    <div class="tab-row" id="landing-tabs">
+      <div class="tab-card" id="admin-tab-card" onclick="showPage('page-admin-login')" style="display:none;">
+        <div class="tab-icon">🔑</div><h3>관리자 (교수)</h3><p>성적 입력 및<br>전체 현황 관리</p>
+      </div>
+      <div class="tab-card" id="student-tab-card" onclick="showPage('page-student-login')">
+        <div class="tab-icon">🎓</div><h3>학생 성적 조회</h3><p>학번 + 생년월일로<br>본인 성적만 조회</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 관리자 로그인 -->
+  <div id="page-admin-login" class="page">
+    <div class="back-row"><button class="btn btn-secondary btn-sm" onclick="showPage('page-landing')">← 뒤로</button><span></span></div>
+    <div class="card fade-up" style="max-width:400px;margin:0 auto;">
+      <div class="card-header">🔐 <h2>관리자 로그인</h2></div>
+      <div class="card-body">
+        <div id="admin-login-error" class="alert alert-error" style="display:none;"></div>
+        <div class="form-group">
+          <label>관리자 비밀번호</label>
+          <input type="password" id="admin-pw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')adminLogin()">
+          <div class="hint">기본 비밀번호: <b>admin1234</b></div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="adminLogin()">로그인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 관리자 대시보드 -->
+  <div id="page-admin" class="page">
+    <div class="back-row">
+      <button class="btn btn-secondary btn-sm" onclick="adminLogout()">← 로그아웃</button>
+      <button class="btn btn-secondary btn-sm" onclick="showPage('page-change-pw')">🔒 비밀번호 변경</button>
+    </div>
+
+    <!-- 성적 입력 카드 -->
+    <div class="card fade-up" style="margin-bottom:20px;">
+      <div class="card-header">➕ <h2>학생 성적 입력</h2></div>
+      <div class="card-body">
+        <div class="info-box">🔐 학생 본인 확인은 <b>학번 + 생년월일</b> 조합으로 이루어집니다.</div>
+
+        <!-- 탭 전환 -->
+        <div class="input-tabs">
+          <button class="input-tab active" id="tab-manual" onclick="switchInputTab('manual')">✏️ 직접 입력</button>
+          <button class="input-tab" id="tab-excel" onclick="switchInputTab('excel')">📊 엑셀 업로드</button>
+        </div>
+
+        <!-- 직접 입력 -->
+        <div id="panel-manual">
+          <div class="add-grid">
+            <div class="form-group" style="margin:0;">
+              <label>학번</label>
+              <input type="text" id="inp-id" placeholder="20250001">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>이름</label>
+              <input type="text" id="inp-name" placeholder="홍길동">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>점수 (0–100)</label>
+              <input type="number" id="inp-score" placeholder="85" min="0" max="100">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>생년월일</label>
+              <div class="birth-input-wrap">
+                <input type="text" id="inp-birth" placeholder="YYYY/MM/DD" maxlength="12"
+                  oninput="formatBirth(this)" onkeydown="if(event.key==='Enter')addStudent()">
+              </div>
+              <div class="hint">예) 2002/06/25 또는 2002-06-25</div>
+            </div>
+            <button class="btn btn-primary" style="height:42px;" onclick="addStudent()">추가</button>
+          </div>
+          <div id="add-error" class="alert alert-error" style="display:none;margin-top:12px;"></div>
+          <div id="add-success" class="alert alert-success" style="display:none;margin-top:12px;"></div>
+        </div>
+
+        <!-- 엑셀 업로드 -->
+        <div id="panel-excel" style="display:none;">
+          <div class="upload-zone" id="upload-zone"
+            ondragover="event.preventDefault();this.classList.add('dragover')"
+            ondragleave="this.classList.remove('dragover')"
+            ondrop="handleDrop(event)">
+            <input type="file" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
+            <div class="upload-icon">📂</div>
+            <h4>엑셀 파일을 클릭하거나 드래그해서 올려주세요</h4>
+            <p>지원 형식: .xlsx · 컬럼 순서: 학번 / 이름 / 점수 / 생년월일(YYYY/MM/DD)</p>
+          </div>
+
+          <div id="excel-preview" style="display:none; margin-top:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-size:13px;font-weight:600;" id="preview-summary"></div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-secondary btn-sm" onclick="clearExcel()">취소</button>
+                <button class="btn btn-primary btn-sm" onclick="importExcel()">✅ 반영하기</button>
+              </div>
+            </div>
+            <div class="preview-table-wrap">
+              <table class="preview-table">
+                <thead><tr><th>학번</th><th>이름</th><th>점수</th><th>생년월일</th><th>상태</th></tr></thead>
+                <tbody id="preview-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="excel-error" class="alert alert-error" style="display:none;margin-top:12px;"></div>
+          <div id="excel-success" class="alert alert-success" style="display:none;margin-top:12px;"></div>
+
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:12px;color:var(--text-muted);">양식이 없으신가요?</div>
+            <a href="성적입력양식.xlsx" download class="btn btn-secondary btn-sm">📥 양식 다운로드</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 전체 현황 -->
+    <div class="card fade-up">
+      <div class="card-header" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">📊 <h2>전체 성적 현황</h2></div>
+        <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 전체 초기화</button>
+      </div>
+      <div class="card-body">
+        <div class="stats-row" id="admin-stats"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>석차</th><th>학번</th><th>이름</th><th>점수</th><th>생년월일</th><th>삭제</th></tr></thead>
+            <tbody id="admin-tbody"></tbody>
+          </table>
+        </div>
+        <div id="admin-empty" style="text-align:center;padding:32px;color:var(--text-muted);font-size:14px;display:none;">아직 등록된 학생이 없어요</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 비밀번호 변경 -->
+  <div id="page-change-pw" class="page">
+    <div class="back-row"><button class="btn btn-secondary btn-sm" onclick="showPage('page-admin')">← 뒤로</button><span></span></div>
+    <div class="card fade-up" style="max-width:400px;margin:0 auto;">
+      <div class="card-header">🔒 <h2>관리자 비밀번호 변경</h2></div>
+      <div class="card-body">
+        <div id="pw-change-msg" class="alert" style="display:none;"></div>
+        <div class="form-group"><label>현재 비밀번호</label><input type="password" id="pw-current"></div>
+        <div class="form-group"><label>새 비밀번호</label><input type="password" id="pw-new"></div>
+        <div class="form-group"><label>새 비밀번호 확인</label><input type="password" id="pw-confirm"></div>
+        <button class="btn btn-primary btn-full" onclick="changeAdminPw()">변경하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 학생 로그인 -->
+  <div id="page-student-login" class="page">
+    <div class="back-row"><button class="btn btn-secondary btn-sm" onclick="showPage('page-landing')">← 뒤로</button><span></span></div>
+    <div class="card fade-up" style="max-width:400px;margin:0 auto;">
+      <div class="card-header">🎓 <h2>본인 성적 조회</h2></div>
+      <div class="card-body">
+        <div class="info-box">학번과 생년월일을 입력하면 본인 성적만 확인할 수 있어요.</div>
+        <div id="student-login-error" class="alert alert-error" style="display:none;"></div>
+        <div class="form-group">
+          <label>학번</label>
+          <input type="text" id="stu-id" placeholder="학번 입력">
+        </div>
+        <div class="form-group">
+          <label>생년월일</label>
+          <div class="birth-input-wrap">
+            <input type="text" id="stu-birth" placeholder="YYYY/MM/DD" maxlength="12"
+              oninput="formatBirth(this)" onkeydown="if(event.key==='Enter')studentLogin()">
+          </div>
+          <div class="hint">예) 2002/06/25 또는 2002-06-25</div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="studentLogin()">성적 조회하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 학생 결과 -->
+  <div id="page-student-result" class="page">
+    <div class="back-row"><button class="btn btn-secondary btn-sm" onclick="showPage('page-student-login')">← 다시 조회</button><span></span></div>
+    <div class="card fade-up">
+      <div class="result-hero" id="result-hero"></div>
+      <div class="card-body" id="result-body"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>성적 공개 시스템 · 데이터는 이 브라우저에만 저장됩니다</footer>
+
+<script>
+// ── State ──
+let students = JSON.parse(localStorage.getItem('grade_students') || '[]');
+let adminPw  = localStorage.getItem('grade_admin_pw') || 'admin1234';
+let excelRows = []; // 업로드 미리보기 데이터
+
+function save() {
+  localStorage.setItem('grade_students', JSON.stringify(students));
+  localStorage.setItem('grade_admin_pw', adminPw);
+}
+
+// ── 생년월일: /, -, . 모두 허용 ──
+function formatBirth(el) {
+  el.value = el.value.replace(/[^\d\/\-\.]/g, '');
+}
+
+// 숫자만 추출 → 8자리 키
+function birthKey(str) {
+  return str.replace(/\D/g, '');
+}
+
+function validBirth(str) {
+  return birthKey(str).length === 8;
+}
+
+// ── Page routing ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const badge = document.getElementById('modeBadge');
+  if (id === 'page-admin' || id === 'page-change-pw') { badge.textContent='관리자 모드'; badge.classList.add('visible'); }
+  else if (id.startsWith('page-student')) { badge.textContent='학생 조회'; badge.classList.add('visible'); }
+  else { badge.classList.remove('visible'); }
+  if (id === 'page-admin') renderAdminTable();
+  clearMessages();
+}
+
+function clearMessages() {
+  ['admin-login-error','add-error','add-success','student-login-error','pw-change-msg','excel-error','excel-success'].forEach(id => {
+    const el = document.getElementById(id); if (el) { el.style.display='none'; el.textContent=''; }
+  });
+}
+
+// ── 탭 전환 ──
+function switchInputTab(tab) {
+  document.getElementById('panel-manual').style.display = tab==='manual' ? 'block' : 'none';
+  document.getElementById('panel-excel').style.display  = tab==='excel'  ? 'block' : 'none';
+  document.getElementById('tab-manual').classList.toggle('active', tab==='manual');
+  document.getElementById('tab-excel').classList.toggle('active', tab==='excel');
+}
+
+// ── Helpers ──
+function calcGrade(score) {
+  if (score>=90) return 'A'; if (score>=80) return 'B';
+  if (score>=70) return 'C'; if (score>=60) return 'D'; return 'F';
+}
+function getRanked() {
+  return [...students].sort((a,b)=>b.score-a.score).map((s,i)=>({...s,rank:i+1}));
+}
+function getScoreColor(score) {
+  if (score>=90) return '#2e7d32'; if (score>=80) return '#1565c0';
+  if (score>=70) return '#f57f17'; if (score>=60) return '#e65100'; return '#c62828';
+}
+
+// ── Admin Login ──
+function adminLogin() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw===adminPw) { document.getElementById('admin-pw').value=''; showPage('page-admin'); }
+  else showErr('admin-login-error','비밀번호가 틀렸어요');
+}
+function adminLogout() { showPage('page-landing'); }
+
+// ── Change PW ──
+function changeAdminPw() {
+  const cur=document.getElementById('pw-current').value;
+  const nw=document.getElementById('pw-new').value;
+  const cf=document.getElementById('pw-confirm').value;
+  const msg=document.getElementById('pw-change-msg');
+  if (cur!==adminPw){ showMsgEl(msg,'현재 비밀번호가 틀렸어요','error'); return; }
+  if (!nw)          { showMsgEl(msg,'새 비밀번호를 입력해주세요','error'); return; }
+  if (nw!==cf)      { showMsgEl(msg,'새 비밀번호가 일치하지 않아요','error'); return; }
+  adminPw=nw; save();
+  showMsgEl(msg,'비밀번호가 변경되었어요 ✅','success');
+  ['pw-current','pw-new','pw-confirm'].forEach(id=>document.getElementById(id).value='');
+}
+
+// ── Add Student (수동) ──
+function addStudent() {
+  const id    = document.getElementById('inp-id').value.trim();
+  const name  = document.getElementById('inp-name').value.trim();
+  const score = parseInt(document.getElementById('inp-score').value);
+  const birth = document.getElementById('inp-birth').value.trim();
+
+  if (!id||!name||isNaN(score)||!birth) { showErr('add-error','모든 항목을 입력해주세요'); return; }
+  if (score<0||score>100)    { showErr('add-error','점수는 0~100 사이로 입력해주세요'); return; }
+  if (!validBirth(birth))    { showErr('add-error','생년월일 8자리를 입력해주세요 (예: 2002/06/25, 2002-06-25)'); return; }
+  if (students.find(s=>s.id===id)) { showErr('add-error','이미 등록된 학번이에요'); return; }
+
+  students.push({ id, name, score, birth: birthKey(birth), birthDisplay: normalizeBirth(birth) });
+  save();
+  ['inp-id','inp-name','inp-score','inp-birth'].forEach(i=>document.getElementById(i).value='');
+  showSuccess('add-success',`${name} 학생이 등록되었어요 ✅`);
+  renderAdminTable();
+}
+
+// 생년월일 표시용 정규화 (YYYY/MM/DD)
+function normalizeBirth(str) {
+  const n = birthKey(str);
+  return n.slice(0,4)+'/'+n.slice(4,6)+'/'+n.slice(6,8);
+}
+
+// ── Delete / Clear ──
+function deleteStudent(id) {
+  if (!confirm('삭제하시겠어요?')) return;
+  students=students.filter(s=>s.id!==id); save(); renderAdminTable();
+}
+function clearAll() {
+  if (!confirm('전체 학생 데이터를 초기화하시겠어요?')) return;
+  students=[]; save(); renderAdminTable();
+}
+
+// ── Excel 업로드 ──
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) parseExcel(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) parseExcel(file);
+}
+
+function parseExcel(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb   = XLSX.read(e.target.result, { type: 'array' });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+      // 헤더 건너뛰기 (1행이 헤더인지 확인)
+      let startRow = 0;
+      if (rows.length > 0) {
+        const first = rows[0].map(c => String(c).trim());
+        if (first.some(c => isNaN(c) && c !== '')) startRow = 1; // 헤더 있으면 스킵
+      }
+
+      excelRows = [];
+      for (let i = startRow; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.every(c => c === '' || c === null)) continue; // 빈 행 스킵
+        const id    = String(row[0] || '').trim();
+        const name  = String(row[1] || '').trim();
+        const score = parseFloat(row[2]);
+        let   birth = String(row[3] || '').trim();
+
+        // 엑셀 날짜 숫자(시리얼) 처리
+        if (!isNaN(row[3]) && row[3] > 10000) {
+          const d = XLSX.SSF.parse_date_code(row[3]);
+          birth = `${d.y}/${String(d.m).padStart(2,'0')}/${String(d.d).padStart(2,'0')}`;
+        }
+
+        const errors = [];
+        if (!id)                  errors.push('학번 없음');
+        if (!name)                errors.push('이름 없음');
+        if (isNaN(score)||score<0||score>100) errors.push('점수 오류');
+        if (!validBirth(birth))   errors.push('생년월일 형식 오류');
+        if (students.find(s=>s.id===id)) errors.push('이미 등록됨');
+
+        excelRows.push({ id, name, score, birth, errors });
+      }
+
+      showExcelPreview();
+    } catch(err) {
+      showErr('excel-error','파일을 읽는 중 오류가 발생했어요: '+err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showExcelPreview() {
+  const ok  = excelRows.filter(r=>r.errors.length===0).length;
+  const err = excelRows.filter(r=>r.errors.length>0).length;
+  document.getElementById('preview-summary').innerHTML =
+    `총 ${excelRows.length}행 · <span style="color:var(--accent);font-weight:700;">${ok}명 반영 가능</span>` +
+    (err ? ` · <span style="color:var(--danger);">${err}행 오류</span>` : '');
+
+  document.getElementById('preview-tbody').innerHTML = excelRows.map(r => `
+    <tr class="${r.errors.length ? 'row-err' : 'row-ok'}">
+      <td style="font-family:'DM Mono',monospace;font-size:12px;">${r.id||'-'}</td>
+      <td>${r.name||'-'}</td>
+      <td>${isNaN(r.score)?'-':r.score}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px;">${r.birth||'-'}</td>
+      <td style="font-size:11px;">${r.errors.length ? '⚠️ '+r.errors.join(', ') : '✅ 정상'}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('excel-preview').style.display = 'block';
+}
+
+function importExcel() {
+  const valid = excelRows.filter(r=>r.errors.length===0);
+  if (!valid.length) { showErr('excel-error','반영 가능한 데이터가 없어요'); return; }
+
+  valid.forEach(r => {
+    students.push({
+      id: r.id, name: r.name, score: r.score,
+      birth: birthKey(r.birth), birthDisplay: normalizeBirth(r.birth)
+    });
+  });
+  save();
+  showSuccess('excel-success', `${valid.length}명이 반영되었어요 ✅`);
+  clearExcel();
+  renderAdminTable();
+}
+
+function clearExcel() {
+  excelRows = [];
+  document.getElementById('excel-preview').style.display = 'none';
+  document.getElementById('preview-tbody').innerHTML = '';
+}
+
+// ── Render Admin Table ──
+function renderAdminTable() {
+  const ranked = getRanked();
+  const tbody  = document.getElementById('admin-tbody');
+  const stats  = document.getElementById('admin-stats');
+  const empty  = document.getElementById('admin-empty');
+  if (!ranked.length) { tbody.innerHTML=''; stats.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  const scores = ranked.map(s=>s.score);
+  const avg    = (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+  stats.innerHTML=`
+    <div class="stat-box"><div class="val">${ranked.length}</div><div class="lbl">총 학생 수</div></div>
+    <div class="stat-box"><div class="val">${avg}</div><div class="lbl">평균 점수</div></div>
+    <div class="stat-box"><div class="val">${Math.max(...scores)}</div><div class="lbl">최고 점수</div></div>
+    <div class="stat-box"><div class="val">${Math.min(...scores)}</div><div class="lbl">최저 점수</div></div>
+  `;
+
+  tbody.innerHTML = ranked.map(s => {
+    const grade=calcGrade(s.score);
+    const rankIcon=s.rank<=3?`<span class="rank-badge rank-${s.rank}">${s.rank}</span>`:`<span class="rank-badge rank-n">${s.rank}</span>`;
+    const barColor=getScoreColor(s.score);
+    return `<tr>
+      <td>${rankIcon}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:13px;">${s.id}</td>
+      <td><b>${s.name}</b></td>
+      <td>
+        <div class="score-bar-wrap">
+          <span style="font-family:'DM Mono',monospace;font-weight:600;min-width:32px;">${s.score}</span>
+          <div class="score-bar"><div class="score-bar-fill" style="width:${s.score}%;background:${barColor};"></div></div>
+        </div>
+      </td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);">${s.birthDisplay||'-'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">삭제</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Student Login ──
+function studentLogin() {
+  const id    = document.getElementById('stu-id').value.trim();
+  const birth = document.getElementById('stu-birth').value.trim();
+  if (!id||!birth) { showErr('student-login-error','학번과 생년월일을 모두 입력해주세요'); return; }
+  if (!validBirth(birth)) { showErr('student-login-error','생년월일 8자리를 입력해주세요'); return; }
+
+  const student = students.find(s=>s.id===id);
+  if (!student)                         { showErr('student-login-error','등록된 학번이 아니에요'); return; }
+  if (student.birth!==birthKey(birth))  { showErr('student-login-error','생년월일이 일치하지 않아요'); return; }
+  showStudentResult(student);
+}
+
+// ── Student Result ──
+function showStudentResult(student) {
+  const ranked=getRanked();
+  const me=ranked.find(s=>s.id===student.id);
+  const total=ranked.length;
+  const grade=calcGrade(me.score);
+  const avg=(ranked.reduce((a,b)=>a+b.score,0)/total).toFixed(1);
+  const barColor=getScoreColor(me.score);
+  const percentile=total===1?100:Math.round((total-me.rank)/(total-1)*100);
+  const rankLabel=me.rank===1?'🥇':me.rank===2?'🥈':me.rank===3?'🥉':`${me.rank}위`;
+
+  document.getElementById('result-hero').innerHTML=`
+    <div class="result-name">${me.name}</div>
+    <div class="result-id">${me.id}</div>
+    <div class="result-score-big">${me.score}</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">/ 100점</div>
+    <div class="result-meta">
+      <div class="result-meta-item"><div class="val">${rankLabel}</div><div class="lbl">석차</div></div>
+      <div class="result-meta-item"><div class="val">${total}명</div><div class="lbl">전체 인원</div></div>
+      <div class="result-meta-item"><div class="val">${avg}</div><div class="lbl">전체 평균</div></div>
+      <div class="result-meta-item"><div class="val">상위 ${percentile}%</div><div class="lbl">백분위</div></div>
+    </div>
+  `;
+  document.getElementById('result-body').innerHTML=`
+    <div style="text-align:right;">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:6px;">점수 분포</div>
+        <div class="score-bar-wrap" style="width:200px;">
+          <div class="score-bar" style="height:10px;flex:1;"><div class="score-bar-fill" style="width:${me.score}%;background:${barColor};"></div></div>
+          <span style="font-size:12px;color:var(--text-muted);">${me.score}%</span>
+        </div>
+      </div>
+    <div class="divider"></div>
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;">
+      🔒 이 성적은 학번과 생년월일이 일치하는 본인만 조회할 수 있습니다
+    </div>
+  `;
+  showPage('page-student-result');
+}
+
+// ── Utils ──
+function showErr(id,msg){ const el=document.getElementById(id); el.textContent=msg; el.style.display='block'; }
+function showSuccess(id,msg){ const el=document.getElementById(id); el.textContent=msg; el.style.display='block'; setTimeout(()=>{el.style.display='none';},4000); }
+function showMsgEl(el,msg,type){ el.textContent=msg; el.className=`alert alert-${type}`; el.style.display='block'; }
+
+// ── URL 파라미터로 관리자 모드 결정 ──
+(function() {
+  const isAdmin = location.search.includes('admin');
+  if (isAdmin) {
+    document.getElementById('admin-tab-card').style.display = 'block';
+    document.getElementById('student-tab-card').style.display = 'block';
+    // 2칸 그리드 유지
+    document.getElementById('landing-tabs').style.gridTemplateColumns = '1fr 1fr';
+  } else {
+    // 학생 카드만 가운데 크게
+    document.getElementById('landing-tabs').style.gridTemplateColumns = '1fr';
+    document.getElementById('landing-tabs').style.maxWidth = '360px';
+    document.getElementById('landing-tabs').style.margin = '0 auto';
+    // 바로 학생 로그인으로 이동
+    showPage('page-student-login');
+  }
+})();
+
+// ── 예시 데이터 ──
+if (!students.length) {
+  students=[
+    {id:'20250001',name:'김민지',score:92,birth:'20030512',birthDisplay:'2003/05/12'},
+    {id:'20250002',name:'이준서',score:78,birth:'20021108',birthDisplay:'2002/11/08'},
+    {id:'20250003',name:'박서연',score:85,birth:'20030320',birthDisplay:'2003/03/20'},
+  ];
+  save();
+}
+</script>
+</body>
+</html>
