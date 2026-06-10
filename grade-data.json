@@ -1,12 +1,12 @@
 {
   "config": {
-    "replyMode": "formspree",
-    "replyEndpoint": "",
+    "replyMode": "googleform",
+    "replyEndpoint": "https://docs.google.com/forms/d/e/1FAIpQLScJkEXYmGCA_btbxoAKdogJXeOsZEeMHIYwh_4HI3aGqvoucA/formResponse",
     "gf": {
-      "id": "",
+      "id": "entry.2058952178",
       "name": "",
       "birth": "",
-      "message": ""
+      "message": "entry.2031487220"
     }
   },
   "students": [
