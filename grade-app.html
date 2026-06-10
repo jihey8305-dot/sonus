@@ -224,6 +224,12 @@
       <div class="card-body">
         <div class="info-box">🔐 학생 본인 확인은 <b>학번 + 생년월일</b> 조합으로 이루어집니다. 학생별 메세지는 선택사항이며, 나중에 표에서 따로 편집할 수 있어요.</div>
 
+        <div class="form-group" style="max-width:220px;">
+          <label>시험 만점 (총점)</label>
+          <input type="number" id="cfg-maxscore" min="1" placeholder="100" onchange="setMaxScore(this.value)">
+          <div class="hint">예: 30점 만점이면 <b>30</b> 입력. 모든 학생에게 적용돼요.</div>
+        </div>
+
         <!-- 탭 전환 -->
         <div class="input-tabs">
           <button class="input-tab active" id="tab-manual" onclick="switchInputTab('manual')">✏️ 직접 입력</button>
@@ -242,8 +248,8 @@
               <input type="text" id="inp-name" placeholder="홍길동">
             </div>
             <div class="form-group" style="margin:0;">
-              <label>점수 (0–100)</label>
-              <input type="number" id="inp-score" placeholder="85" min="0" max="100">
+              <label id="inp-score-label">점수</label>
+              <input type="number" id="inp-score" placeholder="0" min="0">
             </div>
             <div class="form-group" style="margin:0;">
               <label>생년월일</label>
@@ -455,10 +461,22 @@ function loadConfig() {
     return {
       replyMode: c.replyMode || 'formspree',
       replyEndpoint: c.replyEndpoint || '',
+      maxScore: Number(c.maxScore) > 0 ? Number(c.maxScore) : 100,
       gf: { id: '', name: '', birth: '', message: '', ...(c.gf || {}) }
     };
   } catch(e) {
-    return { replyMode: 'formspree', replyEndpoint: '', gf: { id:'', name:'', birth:'', message:'' } };
+    return { replyMode: 'formspree', replyEndpoint: '', maxScore: 100, gf: { id:'', name:'', birth:'', message:'' } };
+  }
+}
+
+// 시험 만점(총점)
+function getMax() { return Number(appConfig.maxScore) > 0 ? Number(appConfig.maxScore) : 100; }
+function setMaxScore(v) {
+  const n = parseInt(v);
+  if (!isNaN(n) && n > 0) {
+    appConfig.maxScore = n; save(); renderAdminTable();
+    document.getElementById('inp-score-label').textContent = `점수 (0–${n})`;
+    document.getElementById('inp-score').max = n;
   }
 }
 
@@ -507,9 +525,11 @@ function switchInputTab(tab) {
 }
 
 // ── Helpers ──
+function pct(score) { return getMax() ? (score / getMax() * 100) : 0; }  // 만점 대비 백분율
 function calcGrade(score) {
-  if (score>=90) return 'A'; if (score>=80) return 'B';
-  if (score>=70) return 'C'; if (score>=60) return 'D'; return 'F';
+  const p = pct(score);
+  if (p>=90) return 'A'; if (p>=80) return 'B';
+  if (p>=70) return 'C'; if (p>=60) return 'D'; return 'F';
 }
 function getRanked() {
   // 동점은 같은 석차(공동 순위), 다음 석차는 인원수만큼 건너뜀 (예: 1, 2, 2, 4)
@@ -521,8 +541,9 @@ function getRanked() {
   });
 }
 function getScoreColor(score) {
-  if (score>=90) return '#2e7d32'; if (score>=80) return '#1565c0';
-  if (score>=70) return '#f57f17'; if (score>=60) return '#e65100'; return '#c62828';
+  const p = pct(score);
+  if (p>=90) return '#2e7d32'; if (p>=80) return '#1565c0';
+  if (p>=70) return '#f57f17'; if (p>=60) return '#e65100'; return '#c62828';
 }
 
 // ── Admin Login ──
@@ -556,7 +577,7 @@ function addStudent() {
   const message = document.getElementById('inp-message').value.trim();
 
   if (!id||!name||isNaN(score)||!birth) { showErr('add-error','학번/이름/점수/생년월일을 모두 입력해주세요'); return; }
-  if (score<0||score>100)    { showErr('add-error','점수는 0~100 사이로 입력해주세요'); return; }
+  if (score<0||score>getMax()) { showErr('add-error',`점수는 0~${getMax()} 사이로 입력해주세요`); return; }
   if (!validBirth(birth))    { showErr('add-error','생년월일 8자리를 입력해주세요 (예: 2002/06/25, 2002-06-25)'); return; }
   if (students.find(s=>s.id===id)) { showErr('add-error','이미 등록된 학번이에요'); return; }
 
@@ -642,7 +663,7 @@ function parseExcel(file) {
         const errors = [];
         if (!id)                  errors.push('학번 없음');
         if (!name)                errors.push('이름 없음');
-        if (isNaN(score)||score<0||score>100) errors.push('점수 오류');
+        if (isNaN(score)||score<0||score>getMax()) errors.push('점수 오류');
         if (!validBirth(birth))   errors.push('생년월일 형식 오류');
         if (students.find(s=>s.id===id)) errors.push('이미 등록됨');
 
@@ -732,7 +753,7 @@ function renderAdminTable() {
       <td>
         <div class="score-bar-wrap">
           <span style="font-family:'DM Mono',monospace;font-weight:600;min-width:32px;">${s.score}</span>
-          <div class="score-bar"><div class="score-bar-fill" style="width:${s.score}%;background:${barColor};"></div></div>
+          <div class="score-bar"><div class="score-bar-fill" style="width:${pct(s.score)}%;background:${barColor};"></div></div>
         </div>
       </td>
       <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);">${s.birthDisplay||'-'}</td>
@@ -766,6 +787,9 @@ function setReplyMode(mode) {
 }
 
 function fillReplyConfigUI() {
+  document.getElementById('cfg-maxscore').value = getMax();
+  document.getElementById('inp-score-label').textContent = `점수 (0–${getMax()})`;
+  document.getElementById('inp-score').max = getMax();
   setReplyMode(appConfig.replyMode || 'formspree');
   document.getElementById('cfg-endpoint').value = appConfig.replyEndpoint || '';
   document.getElementById('gf-id').value      = appConfig.gf.id || '';
@@ -881,7 +905,7 @@ function showStudentResult(student) {
     <div class="result-name">${escapeHtml(me.name)}</div>
     <div class="result-id">${escapeHtml(me.id)}</div>
     <div class="result-score-big">${me.score}</div>
-    <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">/ 100점</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">/ ${getMax()}점</div>
     <div class="result-meta">
       <div class="result-meta-item"><div class="val">${rankLabel}</div><div class="lbl">석차</div></div>
       <div class="result-meta-item"><div class="val">${total}명</div><div class="lbl">전체 인원</div></div>
@@ -893,8 +917,8 @@ function showStudentResult(student) {
     <div style="text-align:right;">
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:6px;">점수 분포</div>
         <div class="score-bar-wrap" style="width:200px;margin-left:auto;">
-          <div class="score-bar" style="height:10px;flex:1;"><div class="score-bar-fill" style="width:${me.score}%;background:${barColor};"></div></div>
-          <span style="font-size:12px;color:var(--text-muted);">${me.score}%</span>
+          <div class="score-bar" style="height:10px;flex:1;"><div class="score-bar-fill" style="width:${pct(me.score)}%;background:${barColor};"></div></div>
+          <span style="font-size:12px;color:var(--text-muted);">${me.score} / ${getMax()}점</span>
         </div>
       </div>
     <div class="divider"></div>
@@ -932,6 +956,7 @@ async function loadFromGitHub() {
       appConfig = {
         replyMode: cfg.replyMode || appConfig.replyMode,
         replyEndpoint: cfg.replyEndpoint || appConfig.replyEndpoint,
+        maxScore: Number(cfg.maxScore) > 0 ? Number(cfg.maxScore) : appConfig.maxScore,
         gf: { id:'', name:'', birth:'', message:'', ...(cfg.gf || {}) }
       };
     }
