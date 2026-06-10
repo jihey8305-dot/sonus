@@ -400,7 +400,7 @@
         <div class="msg-box" id="teacher-message"></div>
         <div class="divider"></div>
         <div class="form-group" style="margin-bottom:8px;">
-          <label>✍️ 여기에 한마디 남겨야 성적이 공개됩니다 (최소 5자)</label>
+          <label>✍️ 여기에 한마디 남겨야 성적이 공개됩니다</label>
           <textarea id="reply-text" placeholder="선생님께 남기고 싶은 말, 한 학기 소감 등을 자유롭게 적어주세요."></textarea>
         </div>
         <div id="reply-error" class="alert alert-error" style="display:none;"></div>
@@ -512,7 +512,13 @@ function calcGrade(score) {
   if (score>=70) return 'C'; if (score>=60) return 'D'; return 'F';
 }
 function getRanked() {
-  return [...students].sort((a,b)=>b.score-a.score).map((s,i)=>({...s,rank:i+1}));
+  // 동점은 같은 석차(공동 순위), 다음 석차는 인원수만큼 건너뜀 (예: 1, 2, 2, 4)
+  const sorted = [...students].sort((a,b)=>b.score-a.score);
+  let rank = 0, prevScore = null;
+  return sorted.map((s,i)=>{
+    if (s.score !== prevScore) { rank = i+1; prevScore = s.score; }
+    return {...s, rank};
+  });
 }
 function getScoreColor(score) {
   if (score>=90) return '#2e7d32'; if (score>=80) return '#1565c0';
@@ -813,7 +819,7 @@ async function submitReply() {
   const errEl = document.getElementById('reply-error');
   const btn = document.getElementById('reply-submit-btn');
 
-  if (text.length < 5) { errEl.textContent='최소 5자 이상 작성해주세요.'; errEl.style.display='block'; return; }
+  if (!text) { errEl.textContent='한마디 남겨야 성적이 공개됩니다.'; errEl.style.display='block'; return; }
   errEl.style.display='none';
   localStorage.setItem('grade_reply_'+me.id, text);
 
