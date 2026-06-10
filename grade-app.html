@@ -40,12 +40,13 @@
   /* Forms */
   .form-group { margin-bottom: 16px; }
   label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-muted); }
-  input[type=text], input[type=password], input[type=number] {
+  input[type=text], input[type=password], input[type=number], textarea {
     width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px;
     font-family: inherit; font-size: 14px; background: var(--surface2); color: var(--text); transition: border-color 0.2s; outline: none;
   }
-  input:focus { border-color: var(--accent); background: white; }
-  .hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+  input:focus, textarea:focus { border-color: var(--accent); background: white; }
+  textarea { resize: vertical; min-height: 96px; line-height: 1.6; }
+  .hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; line-height: 1.5; }
 
   /* 생년월일 슬래시 입력 */
   .birth-input-wrap { position: relative; }
@@ -56,6 +57,7 @@
   .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 8px; border: none; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
   .btn-primary { background: var(--accent); color: white; }
   .btn-primary:hover { background: #234a31; }
+  .btn-primary:disabled { opacity: 0.6; cursor: default; }
   .btn-secondary { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border); }
   .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
   .btn-danger { background: var(--danger); color: white; }
@@ -132,6 +134,10 @@
   .result-meta-item .val { font-size: 18px; font-weight: 700; font-family: 'DM Mono', monospace; }
   .result-meta-item .lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
+  /* 메세지 게이트 */
+  .msg-box { background: var(--accent-light); border: 1px solid #c3dcc8; border-radius: 10px; padding: 20px 22px; font-size: 15px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; color: var(--text); }
+  .msg-from { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 10px; letter-spacing: 0.3px; }
+
   /* Alerts */
   .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
   .alert-error { background: #fdecea; color: var(--danger); border: 1px solid #f5c6c3; }
@@ -142,6 +148,17 @@
   .page { display: none; }
   .page.active { display: block; }
   .back-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+
+  /* 메세지 미리보기 / 설정 */
+  .msg-preview { max-width: 200px; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .radio-row { display: flex; gap: 10px; }
+  .radio-card { flex: 1; border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; font-size: 13px; text-align: center; transition: all 0.2s; background: var(--surface2); }
+  .radio-card.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 600; }
+
+  /* 모달 */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-lg); width: 100%; max-width: 460px; overflow: hidden; animation: fadeUp 0.2s ease; }
 
   @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   .fade-up { animation: fadeUp 0.3s ease; }
@@ -205,7 +222,7 @@
     <div class="card fade-up" style="margin-bottom:20px;">
       <div class="card-header">➕ <h2>학생 성적 입력</h2></div>
       <div class="card-body">
-        <div class="info-box">🔐 학생 본인 확인은 <b>학번 + 생년월일</b> 조합으로 이루어집니다.</div>
+        <div class="info-box">🔐 학생 본인 확인은 <b>학번 + 생년월일</b> 조합으로 이루어집니다. 학생별 메세지는 선택사항이며, 나중에 표에서 따로 편집할 수 있어요.</div>
 
         <!-- 탭 전환 -->
         <div class="input-tabs">
@@ -238,6 +255,10 @@
             </div>
             <button class="btn btn-primary" style="height:42px;" onclick="addStudent()">추가</button>
           </div>
+          <div class="form-group" style="margin-top:14px;">
+            <label>💌 개별 메세지 (선택) — 이 학생이 성적을 보기 전에 읽게 됩니다</label>
+            <textarea id="inp-message" placeholder="예) OO야, 한 학기 동안 정말 성실했어. 마지막까지 수고 많았다 :)"></textarea>
+          </div>
           <div id="add-error" class="alert alert-error" style="display:none;margin-top:12px;"></div>
           <div id="add-success" class="alert alert-success" style="display:none;margin-top:12px;"></div>
         </div>
@@ -251,7 +272,7 @@
             <input type="file" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
             <div class="upload-icon">📂</div>
             <h4>엑셀 파일을 클릭하거나 드래그해서 올려주세요</h4>
-            <p>지원 형식: .xlsx · 컬럼 순서: 학번 / 이름 / 점수 / 생년월일(YYYY/MM/DD)</p>
+            <p>컬럼 순서: 학번 / 이름 / 점수 / 생년월일(YYYY/MM/DD) / 메세지(선택)</p>
           </div>
 
           <div id="excel-preview" style="display:none; margin-top:16px;">
@@ -264,19 +285,45 @@
             </div>
             <div class="preview-table-wrap">
               <table class="preview-table">
-                <thead><tr><th>학번</th><th>이름</th><th>점수</th><th>생년월일</th><th>상태</th></tr></thead>
+                <thead><tr><th>학번</th><th>이름</th><th>점수</th><th>생년월일</th><th>메세지</th><th>상태</th></tr></thead>
                 <tbody id="preview-tbody"></tbody>
               </table>
             </div>
           </div>
           <div id="excel-error" class="alert alert-error" style="display:none;margin-top:12px;"></div>
           <div id="excel-success" class="alert alert-success" style="display:none;margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
 
-          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-            <div style="font-size:12px;color:var(--text-muted);">양식이 없으신가요?</div>
-            <a href="성적입력양식.xlsx" download class="btn btn-secondary btn-sm">📥 양식 다운로드</a>
+    <!-- 답장 수집 설정 카드 -->
+    <div class="card fade-up" style="margin-bottom:20px;">
+      <div class="card-header">💬 <h2>학생 답장 수집 설정</h2></div>
+      <div class="card-body">
+        <div class="info-box">학생은 성적을 보기 전에 <b>답장 한마디</b>를 작성해야 합니다. 그 답장을 받아볼 폼을 연결하세요. (구글폼 또는 Formspree)<br>비워두면 답장은 게이트 용도로만 쓰이고 학생 브라우저에만 저장됩니다.</div>
+        <div class="form-group">
+          <label>수집 방식</label>
+          <div class="radio-row">
+            <div class="radio-card active" id="rc-formspree" onclick="setReplyMode('formspree')">Formspree / 외부폼</div>
+            <div class="radio-card" id="rc-googleform" onclick="setReplyMode('googleform')">구글폼</div>
           </div>
         </div>
+        <div class="form-group">
+          <label id="endpoint-label">폼 endpoint URL</label>
+          <input type="text" id="cfg-endpoint" placeholder="https://formspree.io/f/xxxxxx">
+          <div class="hint" id="endpoint-hint">Formspree에서 폼을 만든 뒤 받은 주소(예: https://formspree.io/f/abcdwxyz)를 붙여넣으세요.</div>
+        </div>
+        <div id="gf-fields" style="display:none;">
+          <div class="hint" style="margin-bottom:10px;line-height:1.6;">구글폼 각 질문의 <b>entry ID</b>를 입력하세요.<br>찾는 법: 구글폼 → 우측 상단 ⋮ → "미리보기" → 페이지 소스 보기 → <code>entry.숫자</code> 검색. (필요한 칸만 입력해도 됩니다)</div>
+          <div class="add-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="form-group" style="margin:0 0 12px;"><label>학번 entry</label><input type="text" id="gf-id" placeholder="entry.123456789"></div>
+            <div class="form-group" style="margin:0 0 12px;"><label>이름 entry</label><input type="text" id="gf-name" placeholder="entry.123456789"></div>
+            <div class="form-group" style="margin:0 0 12px;"><label>생년월일 entry</label><input type="text" id="gf-birth" placeholder="entry.123456789"></div>
+            <div class="form-group" style="margin:0 0 12px;"><label>답장 entry</label><input type="text" id="gf-message" placeholder="entry.123456789"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveReplyConfig()">설정 저장</button>
+        <span id="cfg-saved" style="display:none;margin-left:10px;color:var(--accent);font-size:13px;font-weight:600;">저장됨 ✅</span>
       </div>
     </div>
 
@@ -290,10 +337,11 @@
         </div>
       </div>
       <div class="card-body">
+        <div class="info-box" style="background:#eef6f0;border-color:#c3dcc8;color:var(--accent);">💾 <b>데이터 저장</b>을 누르면 <code>grade-data.json</code>이 내려받아집니다. 학생들이 인터넷으로 보려면 이 파일을 GitHub 저장소에 올려(commit) 주세요. 점수·생년월일·개별 메세지·답장 설정이 모두 포함됩니다.</div>
         <div class="stats-row" id="admin-stats"></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>석차</th><th>학번</th><th>이름</th><th>점수</th><th>생년월일</th><th>삭제</th></tr></thead>
+            <thead><tr><th>석차</th><th>학번</th><th>이름</th><th>점수</th><th>생년월일</th><th>개별 메세지</th><th>삭제</th></tr></thead>
             <tbody id="admin-tbody"></tbody>
           </table>
         </div>
@@ -342,6 +390,26 @@
     </div>
   </div>
 
+  <!-- 학생 메세지 게이트 -->
+  <div id="page-student-message" class="page">
+    <div class="back-row"><button class="btn btn-secondary btn-sm" onclick="showPage('page-student-login')">← 다시 조회</button><span></span></div>
+    <div class="card fade-up">
+      <div class="card-header">💌 <h2>성적을 보기 전에</h2></div>
+      <div class="card-body">
+        <div class="msg-from">선생님이 남긴 메세지</div>
+        <div class="msg-box" id="teacher-message"></div>
+        <div class="divider"></div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <label>✍️ 여기에 한마디 남겨야 성적이 공개됩니다 (최소 5자)</label>
+          <textarea id="reply-text" placeholder="선생님께 남기고 싶은 말, 한 학기 소감 등을 자유롭게 적어주세요."></textarea>
+        </div>
+        <div id="reply-error" class="alert alert-error" style="display:none;"></div>
+        <button class="btn btn-primary btn-full" id="reply-submit-btn" onclick="submitReply()">작성 완료하고 성적 보기 →</button>
+        <button class="btn btn-secondary btn-full" id="reply-skip" style="display:none;margin-top:10px;" onclick="forceShowResult()">전송 없이 성적 보기 →</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 학생 결과 -->
   <div id="page-student-result" class="page">
     <div class="back-row"><button class="btn btn-secondary btn-sm" onclick="showPage('page-student-login')">← 다시 조회</button><span></span></div>
@@ -353,31 +421,62 @@
 
 </main>
 
-<footer>성적 공개 시스템 · 데이터는 이 브라우저에만 저장됩니다</footer>
+<!-- 개별 메세지 편집 모달 -->
+<div class="modal-overlay" id="msg-modal">
+  <div class="modal">
+    <div class="card-header">💌 <h2 id="msg-editor-name">개별 메세지</h2></div>
+    <div class="card-body">
+      <div class="hint" style="margin-bottom:8px;">이 학생이 성적을 확인하기 직전에 읽게 되는 메세지입니다.</div>
+      <textarea id="msg-editor-text" style="min-height:140px;" placeholder="이 학생에게 전하고 싶은 말을 적어주세요."></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+        <button class="btn btn-secondary" onclick="closeMsgEditor()">취소</button>
+        <button class="btn btn-primary" onclick="saveMsgEditor()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>성적 공개 시스템 · 데이터는 이 브라우저와 GitHub에 저장됩니다</footer>
 
 <script>
 // ── State ──
 let students = JSON.parse(localStorage.getItem('grade_students') || '[]');
 let adminPw  = localStorage.getItem('grade_admin_pw') || 'admin1234';
-let excelRows = []; // 업로드 미리보기 데이터
+let appConfig = loadConfig();
+let excelRows = [];        // 업로드 미리보기 데이터
+let currentStudent = null; // 로그인한 학생
+let editingId = null;      // 메세지 편집 중인 학번
+
+const DEFAULT_MSG = '한 학기(또는 시험) 동안 정말 수고 많았어요.\n성적을 확인하기 전에, 아래에 짧게라도 한마디를 남겨주세요.\n작성해야 성적이 공개됩니다 :)';
+
+function loadConfig() {
+  try {
+    const c = JSON.parse(localStorage.getItem('grade_config') || '{}');
+    return {
+      replyMode: c.replyMode || 'formspree',
+      replyEndpoint: c.replyEndpoint || '',
+      gf: { id: '', name: '', birth: '', message: '', ...(c.gf || {}) }
+    };
+  } catch(e) {
+    return { replyMode: 'formspree', replyEndpoint: '', gf: { id:'', name:'', birth:'', message:'' } };
+  }
+}
 
 function save() {
   localStorage.setItem('grade_students', JSON.stringify(students));
   localStorage.setItem('grade_admin_pw', adminPw);
+  localStorage.setItem('grade_config', JSON.stringify(appConfig));
 }
 
 // ── 생년월일: /, -, . 모두 허용 ──
 function formatBirth(el) {
   el.value = el.value.replace(/[^\d\/\-\.]/g, '');
 }
+function birthKey(str) { return String(str).replace(/\D/g, ''); }
+function validBirth(str) { return birthKey(str).length === 8; }
 
-// 숫자만 추출 → 8자리 키
-function birthKey(str) {
-  return str.replace(/\D/g, '');
-}
-
-function validBirth(str) {
-  return birthKey(str).length === 8;
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 // ── Page routing ──
@@ -388,7 +487,8 @@ function showPage(id) {
   if (id === 'page-admin' || id === 'page-change-pw') { badge.textContent='관리자 모드'; badge.classList.add('visible'); }
   else if (id.startsWith('page-student')) { badge.textContent='학생 조회'; badge.classList.add('visible'); }
   else { badge.classList.remove('visible'); }
-  if (id === 'page-admin') renderAdminTable();
+  if (id === 'page-admin') { renderAdminTable(); fillReplyConfigUI(); }
+  window.scrollTo(0, 0);
   clearMessages();
 }
 
@@ -447,20 +547,20 @@ function addStudent() {
   const name  = document.getElementById('inp-name').value.trim();
   const score = parseInt(document.getElementById('inp-score').value);
   const birth = document.getElementById('inp-birth').value.trim();
+  const message = document.getElementById('inp-message').value.trim();
 
-  if (!id||!name||isNaN(score)||!birth) { showErr('add-error','모든 항목을 입력해주세요'); return; }
+  if (!id||!name||isNaN(score)||!birth) { showErr('add-error','학번/이름/점수/생년월일을 모두 입력해주세요'); return; }
   if (score<0||score>100)    { showErr('add-error','점수는 0~100 사이로 입력해주세요'); return; }
   if (!validBirth(birth))    { showErr('add-error','생년월일 8자리를 입력해주세요 (예: 2002/06/25, 2002-06-25)'); return; }
   if (students.find(s=>s.id===id)) { showErr('add-error','이미 등록된 학번이에요'); return; }
 
-  students.push({ id, name, score, birth: birthKey(birth), birthDisplay: normalizeBirth(birth) });
+  students.push({ id, name, score, birth: birthKey(birth), birthDisplay: normalizeBirth(birth), message });
   save();
-  ['inp-id','inp-name','inp-score','inp-birth'].forEach(i=>document.getElementById(i).value='');
+  ['inp-id','inp-name','inp-score','inp-birth','inp-message'].forEach(i=>document.getElementById(i).value='');
   showSuccess('add-success',`${name} 학생이 등록되었어요 ✅`);
   renderAdminTable();
 }
 
-// 생년월일 표시용 정규화 (YYYY/MM/DD)
 function normalizeBirth(str) {
   const n = birthKey(str);
   return n.slice(0,4)+'/'+n.slice(4,6)+'/'+n.slice(6,8);
@@ -475,6 +575,21 @@ function clearAll() {
   if (!confirm('전체 학생 데이터를 초기화하시겠어요?')) return;
   students=[]; save(); renderAdminTable();
 }
+
+// ── 개별 메세지 편집 ──
+function openMsgEditor(id) {
+  const s = students.find(x=>x.id===id); if(!s) return;
+  editingId = id;
+  document.getElementById('msg-editor-name').textContent = `${s.name} (${s.id})`;
+  document.getElementById('msg-editor-text').value = s.message || '';
+  document.getElementById('msg-modal').classList.add('open');
+}
+function saveMsgEditor() {
+  const s = students.find(x=>x.id===editingId); if(!s) { closeMsgEditor(); return; }
+  s.message = document.getElementById('msg-editor-text').value.trim();
+  save(); closeMsgEditor(); renderAdminTable();
+}
+function closeMsgEditor() { document.getElementById('msg-modal').classList.remove('open'); editingId=null; }
 
 // ── Excel 업로드 ──
 function handleDrop(e) {
@@ -496,7 +611,6 @@ function parseExcel(file) {
       const ws   = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-      // 헤더 건너뛰기 (1행이 헤더인지 확인)
       let startRow = 0;
       if (rows.length > 0) {
         const first = rows[0].map(c => String(c).trim());
@@ -506,13 +620,14 @@ function parseExcel(file) {
       excelRows = [];
       for (let i = startRow; i < rows.length; i++) {
         const row = rows[i];
-        if (!row || row.every(c => c === '' || c === null)) continue; // 빈 행 스킵
+        if (!row || row.every(c => c === '' || c === null)) continue;
         const id    = String(row[0] || '').trim();
         const name  = String(row[1] || '').trim();
         const score = parseFloat(row[2]);
         let   birth = String(row[3] || '').trim();
+        const message = String(row[4] || '').trim();
 
-        // 엑셀 날짜 숫자(시리얼) 처리
+        // 엑셀 날짜 시리얼 처리
         if (!isNaN(row[3]) && row[3] > 10000) {
           const d = XLSX.SSF.parse_date_code(row[3]);
           birth = `${d.y}/${String(d.m).padStart(2,'0')}/${String(d.d).padStart(2,'0')}`;
@@ -525,7 +640,7 @@ function parseExcel(file) {
         if (!validBirth(birth))   errors.push('생년월일 형식 오류');
         if (students.find(s=>s.id===id)) errors.push('이미 등록됨');
 
-        excelRows.push({ id, name, score, birth, errors });
+        excelRows.push({ id, name, score, birth, message, errors });
       }
 
       showExcelPreview();
@@ -545,11 +660,12 @@ function showExcelPreview() {
 
   document.getElementById('preview-tbody').innerHTML = excelRows.map(r => `
     <tr class="${r.errors.length ? 'row-err' : 'row-ok'}">
-      <td style="font-family:'DM Mono',monospace;font-size:12px;">${r.id||'-'}</td>
-      <td>${r.name||'-'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px;">${escapeHtml(r.id||'-')}</td>
+      <td>${escapeHtml(r.name||'-')}</td>
       <td>${isNaN(r.score)?'-':r.score}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:12px;">${r.birth||'-'}</td>
-      <td style="font-size:11px;">${r.errors.length ? '⚠️ '+r.errors.join(', ') : '✅ 정상'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px;">${escapeHtml(r.birth||'-')}</td>
+      <td><div class="msg-preview">${r.message?escapeHtml(r.message):'<span style="opacity:.5">-</span>'}</div></td>
+      <td style="font-size:11px;">${r.errors.length ? '⚠️ '+escapeHtml(r.errors.join(', ')) : '✅ 정상'}</td>
     </tr>
   `).join('');
 
@@ -563,7 +679,8 @@ function importExcel() {
   valid.forEach(r => {
     students.push({
       id: r.id, name: r.name, score: r.score,
-      birth: birthKey(r.birth), birthDisplay: normalizeBirth(r.birth)
+      birth: birthKey(r.birth), birthDisplay: normalizeBirth(r.birth),
+      message: r.message || ''
     });
   });
   save();
@@ -597,13 +714,15 @@ function renderAdminTable() {
   `;
 
   tbody.innerHTML = ranked.map(s => {
-    const grade=calcGrade(s.score);
     const rankIcon=s.rank<=3?`<span class="rank-badge rank-${s.rank}">${s.rank}</span>`:`<span class="rank-badge rank-n">${s.rank}</span>`;
     const barColor=getScoreColor(s.score);
+    const msgCell = (s.message && s.message.trim())
+      ? `<div class="msg-preview" title="${escapeHtml(s.message)}">${escapeHtml(s.message)}</div>`
+      : `<div class="msg-preview" style="opacity:.5;">없음</div>`;
     return `<tr>
       <td>${rankIcon}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:13px;">${s.id}</td>
-      <td><b>${s.name}</b></td>
+      <td style="font-family:'DM Mono',monospace;font-size:13px;">${escapeHtml(s.id)}</td>
+      <td><b>${escapeHtml(s.name)}</b></td>
       <td>
         <div class="score-bar-wrap">
           <span style="font-family:'DM Mono',monospace;font-weight:600;min-width:32px;">${s.score}</span>
@@ -611,9 +730,55 @@ function renderAdminTable() {
         </div>
       </td>
       <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);">${s.birthDisplay||'-'}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">삭제</button></td>
+      <td>
+        ${msgCell}
+        <button class="btn btn-secondary btn-sm" style="margin-top:6px;" onclick="openMsgEditor('${escapeHtml(s.id)}')">✏️ 편집</button>
+      </td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteStudent('${escapeHtml(s.id)}')">삭제</button></td>
     </tr>`;
   }).join('');
+}
+
+// ── 답장 수집 설정 ──
+function setReplyMode(mode) {
+  appConfig.replyMode = mode;
+  document.getElementById('rc-formspree').classList.toggle('active', mode==='formspree');
+  document.getElementById('rc-googleform').classList.toggle('active', mode==='googleform');
+  document.getElementById('gf-fields').style.display = mode==='googleform' ? 'block' : 'none';
+  const label = document.getElementById('endpoint-label');
+  const hint  = document.getElementById('endpoint-hint');
+  const ep    = document.getElementById('cfg-endpoint');
+  if (mode==='googleform') {
+    label.textContent = '구글폼 응답 URL (formResponse)';
+    ep.placeholder = 'https://docs.google.com/forms/d/e/FORM_ID/formResponse';
+    hint.innerHTML = '구글폼 주소의 끝부분 <code>/viewform</code>을 <code>/formResponse</code>로 바꿔서 넣으세요.';
+  } else {
+    label.textContent = '폼 endpoint URL';
+    ep.placeholder = 'https://formspree.io/f/xxxxxx';
+    hint.innerHTML = 'Formspree에서 폼을 만든 뒤 받은 주소(예: https://formspree.io/f/abcdwxyz)를 붙여넣으세요.';
+  }
+}
+
+function fillReplyConfigUI() {
+  setReplyMode(appConfig.replyMode || 'formspree');
+  document.getElementById('cfg-endpoint').value = appConfig.replyEndpoint || '';
+  document.getElementById('gf-id').value      = appConfig.gf.id || '';
+  document.getElementById('gf-name').value    = appConfig.gf.name || '';
+  document.getElementById('gf-birth').value   = appConfig.gf.birth || '';
+  document.getElementById('gf-message').value = appConfig.gf.message || '';
+}
+
+function saveReplyConfig() {
+  appConfig.replyEndpoint = document.getElementById('cfg-endpoint').value.trim();
+  appConfig.gf = {
+    id:      document.getElementById('gf-id').value.trim(),
+    name:    document.getElementById('gf-name').value.trim(),
+    birth:   document.getElementById('gf-birth').value.trim(),
+    message: document.getElementById('gf-message').value.trim()
+  };
+  save();
+  const el = document.getElementById('cfg-saved');
+  el.style.display = 'inline'; setTimeout(()=>{el.style.display='none';}, 2500);
 }
 
 // ── Student Login ──
@@ -626,7 +791,72 @@ function studentLogin() {
   const student = students.find(s=>s.id===id);
   if (!student)                         { showErr('student-login-error','등록된 학번이 아니에요'); return; }
   if (student.birth!==birthKey(birth))  { showErr('student-login-error','생년월일이 일치하지 않아요'); return; }
-  showStudentResult(student);
+  showStudentMessage(student);
+}
+
+// ── 메세지 게이트 ──
+function showStudentMessage(student) {
+  currentStudent = student;
+  const msgText = (student.message && student.message.trim()) ? student.message : DEFAULT_MSG;
+  document.getElementById('teacher-message').textContent = msgText;
+  document.getElementById('reply-text').value = '';
+  document.getElementById('reply-error').style.display = 'none';
+  document.getElementById('reply-skip').style.display = 'none';
+  const btn = document.getElementById('reply-submit-btn');
+  btn.disabled = false; btn.textContent = '작성 완료하고 성적 보기 →';
+  showPage('page-student-message');
+}
+
+async function submitReply() {
+  const me = currentStudent; if (!me) return;
+  const text = document.getElementById('reply-text').value.trim();
+  const errEl = document.getElementById('reply-error');
+  const btn = document.getElementById('reply-submit-btn');
+
+  if (text.length < 5) { errEl.textContent='최소 5자 이상 작성해주세요.'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+  localStorage.setItem('grade_reply_'+me.id, text);
+
+  if (appConfig.replyEndpoint) {
+    btn.disabled = true; btn.textContent = '전송 중...';
+    try {
+      await sendReply(me, text);
+    } catch(e) {
+      btn.disabled=false; btn.textContent='작성 완료하고 성적 보기 →';
+      errEl.textContent='답장 전송에 실패했어요. 인터넷을 확인하고 다시 시도하거나, 아래 버튼으로 넘어갈 수 있어요.';
+      errEl.style.display='block';
+      document.getElementById('reply-skip').style.display='block';
+      return;
+    }
+    btn.disabled=false; btn.textContent='작성 완료하고 성적 보기 →';
+  }
+  showStudentResult(me);
+}
+
+function forceShowResult() {
+  if (currentStudent) showStudentResult(currentStudent);
+}
+
+async function sendReply(me, text) {
+  const cfg = appConfig;
+  if (cfg.replyMode === 'googleform') {
+    const fd = new FormData();
+    if (cfg.gf.id)      fd.append(cfg.gf.id, me.id);
+    if (cfg.gf.name)    fd.append(cfg.gf.name, me.name);
+    if (cfg.gf.birth)   fd.append(cfg.gf.birth, me.birthDisplay || '');
+    if (cfg.gf.message) fd.append(cfg.gf.message, text);
+    // 구글폼은 CORS 응답을 막으므로 no-cors로 전송(불투명 응답). 네트워크 실패 시에만 throw.
+    await fetch(cfg.replyEndpoint, { method:'POST', mode:'no-cors', body: fd });
+  } else {
+    const fd = new FormData();
+    fd.append('학번', me.id);
+    fd.append('이름', me.name);
+    fd.append('생년월일', me.birthDisplay || '');
+    fd.append('점수', me.score);
+    fd.append('답장', text);
+    const res = await fetch(cfg.replyEndpoint, { method:'POST', headers:{'Accept':'application/json'}, body: fd });
+    if (!res.ok) throw new Error('HTTP '+res.status);
+  }
 }
 
 // ── Student Result ──
@@ -634,15 +864,14 @@ function showStudentResult(student) {
   const ranked=getRanked();
   const me=ranked.find(s=>s.id===student.id);
   const total=ranked.length;
-  const grade=calcGrade(me.score);
   const avg=(ranked.reduce((a,b)=>a+b.score,0)/total).toFixed(1);
   const barColor=getScoreColor(me.score);
   const percentile=total===1?100:Math.round((total-me.rank)/(total-1)*100);
   const rankLabel=me.rank===1?'🥇':me.rank===2?'🥈':me.rank===3?'🥉':`${me.rank}위`;
 
   document.getElementById('result-hero').innerHTML=`
-    <div class="result-name">${me.name}</div>
-    <div class="result-id">${me.id}</div>
+    <div class="result-name">${escapeHtml(me.name)}</div>
+    <div class="result-id">${escapeHtml(me.id)}</div>
     <div class="result-score-big">${me.score}</div>
     <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">/ 100점</div>
     <div class="result-meta">
@@ -655,14 +884,15 @@ function showStudentResult(student) {
   document.getElementById('result-body').innerHTML=`
     <div style="text-align:right;">
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:6px;">점수 분포</div>
-        <div class="score-bar-wrap" style="width:200px;">
+        <div class="score-bar-wrap" style="width:200px;margin-left:auto;">
           <div class="score-bar" style="height:10px;flex:1;"><div class="score-bar-fill" style="width:${me.score}%;background:${barColor};"></div></div>
           <span style="font-size:12px;color:var(--text-muted);">${me.score}%</span>
         </div>
       </div>
     <div class="divider"></div>
-    <div style="font-size:12px;color:var(--text-muted);text-align:center;">
-      🔒 이 성적은 학번과 생년월일이 일치하는 본인만 조회할 수 있습니다
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;line-height:1.7;">
+      🔒 이 성적은 학번과 생년월일이 일치하는 본인만 조회할 수 있습니다<br>
+      💬 작성하신 답장은 선생님께 전달되었습니다. 수고했어요!
     </div>
   `;
   showPage('page-student-result');
@@ -679,22 +909,35 @@ const REPO_DATA_URL = 'https://jihey8305-dot.github.io/sonus/grade-data.json';
 async function loadFromGitHub() {
   try {
     const res = await fetch(REPO_DATA_URL + '?t=' + Date.now());
-    if (!res.ok) return; // 파일 없으면 그냥 패스
+    if (!res.ok) return;
     const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      // GitHub 데이터가 있으면 로컬보다 우선 적용
-      students = data;
-      save();
+    // 두 가지 형식 지원: 배열(구버전) / { config, students }(신버전)
+    let arr = null, cfg = null;
+    if (Array.isArray(data)) { arr = data; }
+    else if (data && typeof data === 'object') { arr = data.students; cfg = data.config; }
+
+    if (Array.isArray(arr) && arr.length > 0) {
+      // message 필드 보정
+      students = arr.map(s => ({ message:'', ...s }));
     }
+    if (cfg && typeof cfg === 'object') {
+      appConfig = {
+        replyMode: cfg.replyMode || appConfig.replyMode,
+        replyEndpoint: cfg.replyEndpoint || appConfig.replyEndpoint,
+        gf: { id:'', name:'', birth:'', message:'', ...(cfg.gf || {}) }
+      };
+    }
+    save();
   } catch(e) {
     // 파일 없거나 오류면 로컬 데이터 그대로 사용
   }
 }
 
-// ── 데이터 JSON으로 내보내기 ──
+// ── 데이터 JSON으로 내보내기 (config + students) ──
 function exportData() {
   if (!students.length) { alert('등록된 학생이 없어요'); return; }
-  const blob = new Blob([JSON.stringify(students, null, 2)], { type: 'application/json' });
+  const payload = { config: appConfig, students };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'grade-data.json';
@@ -708,14 +951,11 @@ function exportData() {
   if (isAdmin) {
     document.getElementById('admin-tab-card').style.display = 'block';
     document.getElementById('student-tab-card').style.display = 'block';
-    // 2칸 그리드 유지
     document.getElementById('landing-tabs').style.gridTemplateColumns = '1fr 1fr';
   } else {
-    // 학생 카드만 가운데 크게
     document.getElementById('landing-tabs').style.gridTemplateColumns = '1fr';
     document.getElementById('landing-tabs').style.maxWidth = '360px';
     document.getElementById('landing-tabs').style.margin = '0 auto';
-    // 바로 학생 로그인으로 이동
     showPage('page-student-login');
   }
 })();
