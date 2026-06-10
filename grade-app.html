@@ -396,12 +396,12 @@
     <div class="card fade-up">
       <div class="card-header">💌 <h2>성적을 보기 전에</h2></div>
       <div class="card-body">
-        <div class="msg-from">선생님이 남긴 메세지</div>
+        <div class="msg-from">교수님이 남긴 메세지</div>
         <div class="msg-box" id="teacher-message"></div>
         <div class="divider"></div>
         <div class="form-group" style="margin-bottom:8px;">
           <label>✍️ 여기에 한마디 남겨야 성적이 공개됩니다</label>
-          <textarea id="reply-text" placeholder="선생님께 남기고 싶은 말, 한 학기 소감 등을 자유롭게 적어주세요."></textarea>
+          <textarea id="reply-text" placeholder="교수님께 남기고 싶은 말, 한 학기 소감 등을 자유롭게 적어주세요."></textarea>
         </div>
         <div id="reply-error" class="alert alert-error" style="display:none;"></div>
         <button class="btn btn-primary btn-full" id="reply-submit-btn" onclick="submitReply()">작성 완료하고 성적 보기 →</button>
@@ -898,7 +898,7 @@ function showStudentResult(student) {
     <div class="divider"></div>
     <div style="font-size:12px;color:var(--text-muted);text-align:center;line-height:1.7;">
       🔒 이 성적은 학번과 생년월일이 일치하는 본인만 조회할 수 있습니다<br>
-      💬 작성하신 답장은 선생님께 전달되었습니다. 수고했어요!
+      💬 작성하신 답장은 교수님께 전달되었습니다. 수고했어요!
     </div>
   `;
   showPage('page-student-result');
