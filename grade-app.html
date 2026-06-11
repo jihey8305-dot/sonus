@@ -821,8 +821,7 @@ function studentLogin() {
   const student = students.find(s=>s.id===id);
   if (!student)                         { showErr('student-login-error','등록된 학번이 아니에요'); return; }
   if (student.birth!==birthKey(birth))  { showErr('student-login-error','생년월일이 일치하지 않아요'); return; }
-  currentStudent = student;
-  showStudentResult(student);
+  showStudentMessage(student);
 }
 
 // ── 메세지 게이트 ──
@@ -925,7 +924,7 @@ function showStudentResult(student) {
     <div class="divider"></div>
     <div style="font-size:12px;color:var(--text-muted);text-align:center;line-height:1.7;">
       🔒 이 성적은 학번과 생년월일이 일치하는 본인만 조회할 수 있습니다<br>
-      한 학기 동안 정말 수고 많았어요!
+      💬 작성하신 답장은 교수님께 전달되었습니다. 수고했어요!
     </div>
   `;
   showPage('page-student-result');
