@@ -138,6 +138,19 @@
   .msg-box { background: var(--accent-light); border: 1px solid #c3dcc8; border-radius: 10px; padding: 20px 22px; font-size: 15px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; color: var(--text); }
   .msg-from { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 10px; letter-spacing: 0.3px; }
 
+  /* 🎁 뽑기 */
+  #draw-box { font-size: 76px; cursor: pointer; user-select: none; display: inline-block; transition: transform .12s; line-height: 1.1; }
+  #draw-box:active { transform: scale(0.9); }
+  #draw-box.shaking { animation: drawShake 0.5s ease-in-out infinite; }
+  @keyframes drawShake { 0%,100%{transform:rotate(-12deg) scale(1.05);} 50%{transform:rotate(12deg) scale(1.15);} }
+  .draw-card { border-radius: 14px; padding: 22px 18px; text-align: center; animation: fadeUp 0.35s ease; }
+  .draw-win { background: linear-gradient(135deg,#fff7e6,#ffeccc); border: 1.5px solid var(--gold); }
+  .draw-lose { background: var(--surface2); border: 1.5px solid var(--border); }
+  .draw-card .dw-emoji { font-size: 46px; margin-bottom: 8px; }
+  .draw-card .dw-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+  .draw-card .dw-sub { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .draw-card .dw-capture { margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--danger); background: #fff; border: 1.5px dashed var(--danger); border-radius: 10px; padding: 10px; }
+
   /* Alerts */
   .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
   .alert-error { background: #fdecea; color: var(--danger); border: 1px solid #f5c6c3; }
@@ -163,6 +176,11 @@
   @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   .fade-up { animation: fadeUp 0.3s ease; }
 
+  /* 캐릭터 마스코트 */
+  .logo-mascot { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; vertical-align: middle; border: 1.5px solid var(--border); }
+  .mascot-vid { width: 116px; height: 116px; border-radius: 50%; object-fit: cover; box-shadow: var(--shadow); background: var(--surface2); }
+  .dw-vid { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; }
+
   @media (max-width: 700px) {
     .add-grid { grid-template-columns: 1fr 1fr; }
     .tab-row, .stats-row { grid-template-columns: 1fr 1fr; }
@@ -173,7 +191,7 @@
 <body>
 
 <header>
-  <div class="logo">📋 성적 공개 시스템</div>
+  <div class="logo"><img src="mascot.png" class="logo-mascot" alt="">성적 공개 시스템</div>
   <span class="mode-badge" id="modeBadge"></span>
 </header>
 
@@ -228,6 +246,18 @@
           <label>시험 만점 (총점)</label>
           <input type="number" id="cfg-maxscore" min="1" placeholder="100" onchange="setMaxScore(this.value)">
           <div class="hint">예: 30점 만점이면 <b>30</b> 입력. 모든 학생에게 적용돼요.</div>
+        </div>
+
+        <div class="form-group">
+          <label>⏰ 공개 마감 일시 (이 시각 이후 자동 종료)</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input type="datetime-local" id="cfg-deadline" style="max-width:240px;" onchange="setDeadline(this.value)">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setDeadlineDays(3)">오늘부터 3일</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setDeadlineDays(7)">7일</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="clearDeadline()">제한 없음</button>
+          </div>
+          <div class="hint" id="deadline-info" style="margin-top:8px;"></div>
+          <div class="hint">※ 설정 후 <b>💾 데이터 저장</b> → GitHub에 올려야 학생 화면에 적용됩니다.</div>
         </div>
 
         <!-- 탭 전환 -->
@@ -347,7 +377,7 @@
         <div class="stats-row" id="admin-stats"></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>석차</th><th>학번</th><th>이름</th><th>점수</th><th>생년월일</th><th>개별 메세지</th><th>삭제</th></tr></thead>
+            <thead><tr><th>석차</th><th>학번</th><th>이름</th><th>점수</th><th>생년월일</th><th>뽑기(당첨)</th><th>개별 메세지</th><th>삭제</th></tr></thead>
             <tbody id="admin-tbody"></tbody>
           </table>
         </div>
@@ -378,6 +408,7 @@
       <div class="card-header">🎓 <h2>본인 성적 조회</h2></div>
       <div class="card-body">
         <div class="info-box">학번과 생년월일을 입력하면 본인 성적만 확인할 수 있어요.</div>
+        <div id="login-deadline" style="display:none;font-size:12px;color:var(--danger);text-align:center;margin-bottom:14px;font-weight:500;"></div>
         <div id="student-login-error" class="alert alert-error" style="display:none;"></div>
         <div class="form-group">
           <label>학번</label>
@@ -396,22 +427,53 @@
     </div>
   </div>
 
+  <!-- 공개 종료 안내 -->
+  <div id="page-closed" class="page">
+    <div class="card fade-up" style="max-width:420px;margin:0 auto;text-align:center;">
+      <div class="card-body" style="padding:48px 28px;">
+        <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+        <h2 style="font-size:19px;margin-bottom:10px;">성적 공개 기간이 종료되었습니다</h2>
+        <p style="font-size:14px;color:var(--text-muted);line-height:1.7;">공개 기간이 지나 더 이상 조회할 수 없습니다.<br>문의사항은 담당 교수님께 연락해주세요.</p>
+        <div id="closed-info" style="font-size:12px;color:var(--text-muted);margin-top:16px;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- 학생 메세지 게이트 -->
   <div id="page-student-message" class="page">
     <div class="back-row"><button class="btn btn-secondary btn-sm" onclick="showPage('page-student-login')">← 다시 조회</button><span></span></div>
     <div class="card fade-up">
       <div class="card-header">💌 <h2>성적을 보기 전에</h2></div>
       <div class="card-body">
+        <div style="text-align:center;margin-bottom:16px;">
+          <video class="mascot-vid" src="mascot.mp4" poster="mascot.png" autoplay loop muted playsinline></video>
+        </div>
         <div class="msg-from">교수님이 남긴 메세지</div>
         <div class="msg-box" id="teacher-message"></div>
         <div class="divider"></div>
-        <div class="form-group" style="margin-bottom:8px;">
-          <label>✍️ 여기에 한마디 남겨야 성적이 공개됩니다</label>
-          <textarea id="reply-text" placeholder="교수님께 남기고 싶은 말, 한 학기 소감 등을 자유롭게 적어주세요."></textarea>
+
+        <!-- 🎁 뽑기 -->
+        <div id="draw-section">
+          <div style="text-align:center;">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px;">🎁 성적 공개 기념 뽑기 찬스!</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:18px;">선물상자를 눌러 딱 한 번 뽑아보세요</div>
+            <div id="draw-box" onclick="drawPrize()">🎁</div>
+            <div id="draw-hint" style="font-size:12px;color:var(--text-muted);margin-top:10px;">👆 눌러서 뽑기</div>
+          </div>
+          <div id="draw-result" style="display:none;margin-top:18px;"></div>
         </div>
-        <div id="reply-error" class="alert alert-error" style="display:none;"></div>
-        <button class="btn btn-primary btn-full" id="reply-submit-btn" onclick="submitReply()">작성 완료하고 성적 보기 →</button>
-        <button class="btn btn-secondary btn-full" id="reply-skip" style="display:none;margin-top:10px;" onclick="forceShowResult()">전송 없이 성적 보기 →</button>
+
+        <!-- 답장 (뽑기 후 노출) -->
+        <div id="reply-section" style="display:none;">
+          <div class="divider"></div>
+          <div class="form-group" style="margin-bottom:8px;">
+            <label>✍️ 여기에 한마디 남겨야 성적이 공개됩니다</label>
+            <textarea id="reply-text" placeholder="교수님께 남기고 싶은 말, 한 학기 소감 등을 자유롭게 적어주세요."></textarea>
+          </div>
+          <div id="reply-error" class="alert alert-error" style="display:none;"></div>
+          <button class="btn btn-primary btn-full" id="reply-submit-btn" onclick="submitReply()">작성 완료하고 성적 보기 →</button>
+          <button class="btn btn-secondary btn-full" id="reply-skip" style="display:none;margin-top:10px;" onclick="forceShowResult()">전송 없이 성적 보기 →</button>
+        </div>
       </div>
     </div>
   </div>
@@ -462,10 +524,11 @@ function loadConfig() {
       replyMode: c.replyMode || 'formspree',
       replyEndpoint: c.replyEndpoint || '',
       maxScore: Number(c.maxScore) > 0 ? Number(c.maxScore) : 100,
+      openUntil: c.openUntil || null,   // 공개 마감 시각(epoch ms). null이면 무제한
       gf: { id: '', name: '', birth: '', message: '', ...(c.gf || {}) }
     };
   } catch(e) {
-    return { replyMode: 'formspree', replyEndpoint: '', maxScore: 100, gf: { id:'', name:'', birth:'', message:'' } };
+    return { replyMode: 'formspree', replyEndpoint: '', maxScore: 100, openUntil: null, gf: { id:'', name:'', birth:'', message:'' } };
   }
 }
 
@@ -478,6 +541,35 @@ function setMaxScore(v) {
     document.getElementById('inp-score-label').textContent = `점수 (0–${n})`;
     document.getElementById('inp-score').max = n;
   }
+}
+
+// ── 공개 기간(자동 종료) ──
+function isOpen() { return !appConfig.openUntil || Date.now() <= appConfig.openUntil; }
+function fmtDeadline(ms) {
+  if (!ms) return '';
+  const d = new Date(ms);
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+// datetime-local(문자열) ↔ epoch ms
+function localToMs(v) { return v ? new Date(v).getTime() : null; }
+function msToLocal(ms) {
+  if (!ms) return '';
+  const d = new Date(ms); const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function setDeadline(v) { appConfig.openUntil = localToMs(v); save(); refreshDeadlineUI(); }
+function setDeadlineDays(days) {
+  const d = new Date(); d.setDate(d.getDate()+days); d.setHours(23,59,0,0);
+  appConfig.openUntil = d.getTime(); save(); refreshDeadlineUI();
+}
+function clearDeadline() { appConfig.openUntil = null; save(); refreshDeadlineUI(); }
+function refreshDeadlineUI() {
+  const inp = document.getElementById('cfg-deadline'); if (inp) inp.value = msToLocal(appConfig.openUntil);
+  const info = document.getElementById('deadline-info');
+  if (info) info.textContent = appConfig.openUntil
+    ? `현재 설정: ${fmtDeadline(appConfig.openUntil)} 까지 공개 (이후 자동 종료)`
+    : '현재 설정: 기간 제한 없음 (계속 공개)';
 }
 
 function save() {
@@ -506,6 +598,13 @@ function showPage(id) {
   else if (id.startsWith('page-student')) { badge.textContent='학생 조회'; badge.classList.add('visible'); }
   else { badge.classList.remove('visible'); }
   if (id === 'page-admin') { renderAdminTable(); fillReplyConfigUI(); }
+  if (id === 'page-student-login') {
+    const dl = document.getElementById('login-deadline');
+    if (dl) {
+      if (appConfig.openUntil && isOpen()) { dl.textContent = `⏰ 공개 마감: ${fmtDeadline(appConfig.openUntil)} 까지`; dl.style.display='block'; }
+      else { dl.style.display='none'; }
+    }
+  }
   window.scrollTo(0, 0);
   clearMessages();
 }
@@ -757,6 +856,7 @@ function renderAdminTable() {
         </div>
       </td>
       <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);">${s.birthDisplay||'-'}</td>
+      <td>${s.prize ? `<span style="font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-light);padding:3px 8px;border-radius:10px;white-space:nowrap;">🎉 ${escapeHtml(s.prize)}</span>` : `<span style="font-size:12px;color:var(--text-muted);opacity:.6;">꽝</span>`}</td>
       <td>
         ${msgCell}
         <button class="btn btn-secondary btn-sm" style="margin-top:6px;" onclick="openMsgEditor('${escapeHtml(s.id)}')">✏️ 편집</button>
@@ -796,6 +896,7 @@ function fillReplyConfigUI() {
   document.getElementById('gf-name').value    = appConfig.gf.name || '';
   document.getElementById('gf-birth').value   = appConfig.gf.birth || '';
   document.getElementById('gf-message').value = appConfig.gf.message || '';
+  refreshDeadlineUI();
 }
 
 function saveReplyConfig() {
@@ -813,6 +914,7 @@ function saveReplyConfig() {
 
 // ── Student Login ──
 function studentLogin() {
+  if (!isOpen()) { showClosed(); return; }
   const id    = document.getElementById('stu-id').value.trim();
   const birth = document.getElementById('stu-birth').value.trim();
   if (!id||!birth) { showErr('student-login-error','학번과 생년월일을 모두 입력해주세요'); return; }
@@ -822,6 +924,12 @@ function studentLogin() {
   if (!student)                         { showErr('student-login-error','등록된 학번이 아니에요'); return; }
   if (student.birth!==birthKey(birth))  { showErr('student-login-error','생년월일이 일치하지 않아요'); return; }
   showStudentMessage(student);
+}
+
+function showClosed() {
+  const el = document.getElementById('closed-info');
+  if (el) el.textContent = appConfig.openUntil ? `공개 기간: ~ ${fmtDeadline(appConfig.openUntil)}` : '';
+  showPage('page-closed');
 }
 
 // ── 메세지 게이트 ──
@@ -834,7 +942,64 @@ function showStudentMessage(student) {
   document.getElementById('reply-skip').style.display = 'none';
   const btn = document.getElementById('reply-submit-btn');
   btn.disabled = false; btn.textContent = '작성 완료하고 성적 보기 →';
+  // 뽑기 초기화
+  drawDone = false;
+  const box = document.getElementById('draw-box');
+  box.textContent = '🎁'; box.classList.remove('shaking'); box.style.pointerEvents = 'auto';
+  document.getElementById('draw-hint').style.display = 'block';
+  document.getElementById('draw-result').style.display = 'none';
+  document.getElementById('draw-result').innerHTML = '';
+  document.getElementById('reply-section').style.display = 'none';
   showPage('page-student-message');
+}
+
+// ── 뽑기 ──
+let drawDone = false;
+const PRIZE_EMOJI = { '수업 20분 일찍 끝내기':'🏃', '교수님과 커피타임':'☕', '가산점 1점':'✨' };
+function drawPrize() {
+  if (drawDone || !currentStudent) return;
+  drawDone = true;
+  const box = document.getElementById('draw-box');
+  box.style.pointerEvents = 'none';
+  document.getElementById('draw-hint').style.display = 'none';
+  box.classList.add('shaking');
+  const spin = ['🎁','🎊','✨','🎉','🍀','🎁'];
+  let t = 0;
+  const iv = setInterval(() => { box.textContent = spin[t++ % spin.length]; }, 110);
+  setTimeout(() => {
+    clearInterval(iv);
+    box.classList.remove('shaking');
+    revealPrize();
+  }, 1500);
+}
+function revealPrize() {
+  const prize = (currentStudent && currentStudent.prize) ? currentStudent.prize : '';
+  const box = document.getElementById('draw-box');
+  const res = document.getElementById('draw-result');
+  if (prize) {
+    const emo = PRIZE_EMOJI[prize] || '🎁';
+    box.textContent = '🎉';
+    res.innerHTML = `
+      <div class="draw-card draw-win">
+        <video class="dw-vid" src="mascot.mp4" poster="mascot.png" autoplay loop muted playsinline></video>
+        <div class="dw-emoji">${emo}</div>
+        <div class="dw-title">당첨! ${escapeHtml(prize)}</div>
+        <div class="dw-sub">축하합니다! 🎉</div>
+        <div class="dw-capture">📸 이 화면을 캡쳐해서 교수님께 보내주세요!</div>
+      </div>`;
+  } else {
+    box.textContent = '📦';
+    res.innerHTML = `
+      <div class="draw-card draw-lose">
+        <div class="dw-emoji">😅</div>
+        <div class="dw-title">꽝!</div>
+        <div class="dw-sub">아쉽지만 다음 기회에...<br>그래도 성적은 확인할 수 있어요 :)</div>
+      </div>`;
+  }
+  res.style.display = 'block';
+  // 뽑기 후 답장 단계 노출
+  document.getElementById('reply-section').style.display = 'block';
+  if (currentStudent) { try { localStorage.setItem('grade_draw_'+currentStudent.id, prize || '꽝'); } catch(e){} }
 }
 
 async function submitReply() {
@@ -957,10 +1122,13 @@ async function loadFromGitHub() {
         replyMode: cfg.replyMode || appConfig.replyMode,
         replyEndpoint: cfg.replyEndpoint || appConfig.replyEndpoint,
         maxScore: Number(cfg.maxScore) > 0 ? Number(cfg.maxScore) : appConfig.maxScore,
+        openUntil: ('openUntil' in cfg) ? cfg.openUntil : appConfig.openUntil,
         gf: { id:'', name:'', birth:'', message:'', ...(cfg.gf || {}) }
       };
     }
     save();
+    // 공개 기간이 지났으면 학생 화면을 종료 안내로 전환 (관리자 제외)
+    if (!location.search.includes('admin') && !isOpen()) showClosed();
   } catch(e) {
     // 파일 없거나 오류면 로컬 데이터 그대로 사용
   }
