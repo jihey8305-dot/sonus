@@ -456,6 +456,7 @@
         </div>
         <div class="msg-from">교수님이 남긴 메세지</div>
         <div class="msg-box" id="teacher-message"></div>
+        <div id="gate-deadline" style="display:none;margin-top:12px;font-size:13px;font-weight:600;color:var(--danger);background:#fdecea;border:1px solid #f5c6c3;border-radius:8px;padding:10px 14px;text-align:center;line-height:1.6;"></div>
         <div class="divider"></div>
 
         <!-- 🎁 뽑기 -->
@@ -521,7 +522,7 @@ let excelRows = [];        // 업로드 미리보기 데이터
 let currentStudent = null; // 로그인한 학생
 let editingId = null;      // 메세지 편집 중인 학번
 
-const DEFAULT_MSG = '한 학기(또는 시험) 동안 정말 수고 많았어요.\n성적을 확인하기 전에, 아래에 짧게라도 한마디를 남겨주세요.\n작성해야 성적이 공개됩니다 :)';
+const DEFAULT_MSG = '중간고사 준비하느라 정말 수고 많았어요.\n성적을 확인하기 전에, 아래에 짧게라도 한마디를 남겨주세요.\n작성해야 성적이 공개됩니다 :)';
 
 function loadConfig() {
   try {
@@ -613,7 +614,7 @@ function showPage(id) {
     if (lt) lt.textContent = getExamTitle() ? `${getExamTitle()} 성적 조회` : '본인 성적 조회';
     const dl = document.getElementById('login-deadline');
     if (dl) {
-      if (appConfig.openUntil && isOpen()) { dl.textContent = `⏰ 공개 마감: ${fmtDeadline(appConfig.openUntil)} 까지`; dl.style.display='block'; }
+      if (appConfig.openUntil && isOpen()) { dl.textContent = `⏰ 3일간만 공개 · 마감 ${fmtDeadline(appConfig.openUntil)}`; dl.style.display='block'; }
       else { dl.style.display='none'; }
     }
   }
@@ -950,6 +951,11 @@ function showStudentMessage(student) {
   currentStudent = student;
   const msgText = (student.message && student.message.trim()) ? student.message : DEFAULT_MSG;
   document.getElementById('teacher-message').textContent = msgText;
+  const gd = document.getElementById('gate-deadline');
+  if (appConfig.openUntil && isOpen()) {
+    gd.textContent = `⏰ 이 성적은 ${fmtDeadline(appConfig.openUntil)} 까지, 딱 3일간만 공개됩니다. 기간이 지나면 조회할 수 없어요!`;
+    gd.style.display = 'block';
+  } else { gd.style.display = 'none'; }
   document.getElementById('reply-text').value = '';
   document.getElementById('reply-error').style.display = 'none';
   document.getElementById('reply-skip').style.display = 'none';
