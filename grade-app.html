@@ -242,6 +242,12 @@
       <div class="card-body">
         <div class="info-box">🔐 학생 본인 확인은 <b>학번 + 생년월일</b> 조합으로 이루어집니다. 학생별 메세지는 선택사항이며, 나중에 표에서 따로 편집할 수 있어요.</div>
 
+        <div class="form-group" style="max-width:280px;">
+          <label>시험 이름 (예: 중간고사)</label>
+          <input type="text" id="cfg-examtitle" placeholder="중간고사" onchange="setExamTitle(this.value)">
+          <div class="hint">학생 로그인·결과 화면에 표시돼요. 비워두면 안 나와요.</div>
+        </div>
+
         <div class="form-group" style="max-width:220px;">
           <label>시험 만점 (총점)</label>
           <input type="number" id="cfg-maxscore" min="1" placeholder="100" onchange="setMaxScore(this.value)">
@@ -405,7 +411,7 @@
   <div id="page-student-login" class="page">
     <div class="back-row"><button class="btn btn-secondary btn-sm" onclick="showPage('page-landing')">← 뒤로</button><span></span></div>
     <div class="card fade-up" style="max-width:400px;margin:0 auto;">
-      <div class="card-header">🎓 <h2>본인 성적 조회</h2></div>
+      <div class="card-header">🎓 <h2 id="login-title">본인 성적 조회</h2></div>
       <div class="card-body">
         <div class="info-box">학번과 생년월일을 입력하면 본인 성적만 확인할 수 있어요.</div>
         <div id="login-deadline" style="display:none;font-size:12px;color:var(--danger);text-align:center;margin-bottom:14px;font-weight:500;"></div>
@@ -524,13 +530,17 @@ function loadConfig() {
       replyMode: c.replyMode || 'formspree',
       replyEndpoint: c.replyEndpoint || '',
       maxScore: Number(c.maxScore) > 0 ? Number(c.maxScore) : 100,
+      examTitle: c.examTitle || '',     // 시험 이름(예: 중간고사)
       openUntil: c.openUntil || null,   // 공개 마감 시각(epoch ms). null이면 무제한
       gf: { id: '', name: '', birth: '', message: '', ...(c.gf || {}) }
     };
   } catch(e) {
-    return { replyMode: 'formspree', replyEndpoint: '', maxScore: 100, openUntil: null, gf: { id:'', name:'', birth:'', message:'' } };
+    return { replyMode: 'formspree', replyEndpoint: '', maxScore: 100, examTitle: '', openUntil: null, gf: { id:'', name:'', birth:'', message:'' } };
   }
 }
+
+function getExamTitle() { return (appConfig.examTitle || '').trim(); }
+function setExamTitle(v) { appConfig.examTitle = (v||'').trim(); save(); }
 
 // 시험 만점(총점)
 function getMax() { return Number(appConfig.maxScore) > 0 ? Number(appConfig.maxScore) : 100; }
@@ -599,6 +609,8 @@ function showPage(id) {
   else { badge.classList.remove('visible'); }
   if (id === 'page-admin') { renderAdminTable(); fillReplyConfigUI(); }
   if (id === 'page-student-login') {
+    const lt = document.getElementById('login-title');
+    if (lt) lt.textContent = getExamTitle() ? `${getExamTitle()} 성적 조회` : '본인 성적 조회';
     const dl = document.getElementById('login-deadline');
     if (dl) {
       if (appConfig.openUntil && isOpen()) { dl.textContent = `⏰ 공개 마감: ${fmtDeadline(appConfig.openUntil)} 까지`; dl.style.display='block'; }
@@ -887,6 +899,7 @@ function setReplyMode(mode) {
 }
 
 function fillReplyConfigUI() {
+  document.getElementById('cfg-examtitle').value = getExamTitle();
   document.getElementById('cfg-maxscore').value = getMax();
   document.getElementById('inp-score-label').textContent = `점수 (0–${getMax()})`;
   document.getElementById('inp-score').max = getMax();
@@ -1067,6 +1080,7 @@ function showStudentResult(student) {
   const topPercent = Math.round(me.rank/total*100);  // 상위 N% (작을수록 상위)
 
   document.getElementById('result-hero').innerHTML=`
+    ${getExamTitle()?`<div style="font-size:12px;color:var(--accent);font-weight:700;margin-bottom:10px;letter-spacing:0.3px;">📘 ${escapeHtml(getExamTitle())}</div>`:''}
     <div class="result-name">${escapeHtml(me.name)}</div>
     <div class="result-id">${escapeHtml(me.id)}</div>
     <div class="result-score-big">${me.score}</div>
@@ -1122,6 +1136,7 @@ async function loadFromGitHub() {
         replyMode: cfg.replyMode || appConfig.replyMode,
         replyEndpoint: cfg.replyEndpoint || appConfig.replyEndpoint,
         maxScore: Number(cfg.maxScore) > 0 ? Number(cfg.maxScore) : appConfig.maxScore,
+        examTitle: ('examTitle' in cfg) ? cfg.examTitle : appConfig.examTitle,
         openUntil: ('openUntil' in cfg) ? cfg.openUntil : appConfig.openUntil,
         gf: { id:'', name:'', birth:'', message:'', ...(cfg.gf || {}) }
       };
