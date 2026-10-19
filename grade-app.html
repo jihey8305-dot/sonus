@@ -138,6 +138,19 @@
   .msg-box { background: var(--accent-light); border: 1px solid #c3dcc8; border-radius: 10px; padding: 20px 22px; font-size: 15px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; color: var(--text); }
   .msg-from { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 10px; letter-spacing: 0.3px; }
 
+  /* 🎁 뽑기 */
+  #draw-box { font-size: 76px; cursor: pointer; user-select: none; display: inline-block; transition: transform .12s; line-height: 1.1; }
+  #draw-box:active { transform: scale(0.9); }
+  #draw-box.shaking { animation: drawShake 0.5s ease-in-out infinite; }
+  @keyframes drawShake { 0%,100%{transform:rotate(-12deg) scale(1.05);} 50%{transform:rotate(12deg) scale(1.15);} }
+  .draw-card { border-radius: 14px; padding: 22px 18px; text-align: center; animation: fadeUp 0.35s ease; }
+  .draw-win { background: linear-gradient(135deg,#fff7e6,#ffeccc); border: 1.5px solid var(--gold); }
+  .draw-lose { background: var(--surface2); border: 1.5px solid var(--border); }
+  .draw-card .dw-emoji { font-size: 46px; margin-bottom: 8px; }
+  .draw-card .dw-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+  .draw-card .dw-sub { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .draw-card .dw-capture { margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--danger); background: #fff; border: 1.5px dashed var(--danger); border-radius: 10px; padding: 10px; }
+
   /* Alerts */
   .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
   .alert-error { background: #fdecea; color: var(--danger); border: 1px solid #f5c6c3; }
@@ -359,7 +372,7 @@
         <div class="stats-row" id="admin-stats"></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>석차</th><th>학번</th><th>이름</th><th>점수</th><th>생년월일</th><th>개별 메세지</th><th>삭제</th></tr></thead>
+            <thead><tr><th>석차</th><th>학번</th><th>이름</th><th>점수</th><th>생년월일</th><th>뽑기(당첨)</th><th>개별 메세지</th><th>삭제</th></tr></thead>
             <tbody id="admin-tbody"></tbody>
           </table>
         </div>
@@ -430,13 +443,29 @@
         <div class="msg-from">교수님이 남긴 메세지</div>
         <div class="msg-box" id="teacher-message"></div>
         <div class="divider"></div>
-        <div class="form-group" style="margin-bottom:8px;">
-          <label>✍️ 여기에 한마디 남겨야 성적이 공개됩니다</label>
-          <textarea id="reply-text" placeholder="교수님께 남기고 싶은 말, 한 학기 소감 등을 자유롭게 적어주세요."></textarea>
+
+        <!-- 🎁 뽑기 -->
+        <div id="draw-section">
+          <div style="text-align:center;">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px;">🎁 성적 공개 기념 뽑기 찬스!</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:18px;">선물상자를 눌러 딱 한 번 뽑아보세요</div>
+            <div id="draw-box" onclick="drawPrize()">🎁</div>
+            <div id="draw-hint" style="font-size:12px;color:var(--text-muted);margin-top:10px;">👆 눌러서 뽑기</div>
+          </div>
+          <div id="draw-result" style="display:none;margin-top:18px;"></div>
         </div>
-        <div id="reply-error" class="alert alert-error" style="display:none;"></div>
-        <button class="btn btn-primary btn-full" id="reply-submit-btn" onclick="submitReply()">작성 완료하고 성적 보기 →</button>
-        <button class="btn btn-secondary btn-full" id="reply-skip" style="display:none;margin-top:10px;" onclick="forceShowResult()">전송 없이 성적 보기 →</button>
+
+        <!-- 답장 (뽑기 후 노출) -->
+        <div id="reply-section" style="display:none;">
+          <div class="divider"></div>
+          <div class="form-group" style="margin-bottom:8px;">
+            <label>✍️ 여기에 한마디 남겨야 성적이 공개됩니다</label>
+            <textarea id="reply-text" placeholder="교수님께 남기고 싶은 말, 한 학기 소감 등을 자유롭게 적어주세요."></textarea>
+          </div>
+          <div id="reply-error" class="alert alert-error" style="display:none;"></div>
+          <button class="btn btn-primary btn-full" id="reply-submit-btn" onclick="submitReply()">작성 완료하고 성적 보기 →</button>
+          <button class="btn btn-secondary btn-full" id="reply-skip" style="display:none;margin-top:10px;" onclick="forceShowResult()">전송 없이 성적 보기 →</button>
+        </div>
       </div>
     </div>
   </div>
@@ -819,6 +848,7 @@ function renderAdminTable() {
         </div>
       </td>
       <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);">${s.birthDisplay||'-'}</td>
+      <td>${s.prize ? `<span style="font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-light);padding:3px 8px;border-radius:10px;white-space:nowrap;">🎉 ${escapeHtml(s.prize)}</span>` : `<span style="font-size:12px;color:var(--text-muted);opacity:.6;">꽝</span>`}</td>
       <td>
         ${msgCell}
         <button class="btn btn-secondary btn-sm" style="margin-top:6px;" onclick="openMsgEditor('${escapeHtml(s.id)}')">✏️ 편집</button>
@@ -904,7 +934,63 @@ function showStudentMessage(student) {
   document.getElementById('reply-skip').style.display = 'none';
   const btn = document.getElementById('reply-submit-btn');
   btn.disabled = false; btn.textContent = '작성 완료하고 성적 보기 →';
+  // 뽑기 초기화
+  drawDone = false;
+  const box = document.getElementById('draw-box');
+  box.textContent = '🎁'; box.classList.remove('shaking'); box.style.pointerEvents = 'auto';
+  document.getElementById('draw-hint').style.display = 'block';
+  document.getElementById('draw-result').style.display = 'none';
+  document.getElementById('draw-result').innerHTML = '';
+  document.getElementById('reply-section').style.display = 'none';
   showPage('page-student-message');
+}
+
+// ── 뽑기 ──
+let drawDone = false;
+const PRIZE_EMOJI = { '수업 20분 일찍 끝내기':'🏃', '교수님과 커피타임':'☕', '가산점 1점':'✨' };
+function drawPrize() {
+  if (drawDone || !currentStudent) return;
+  drawDone = true;
+  const box = document.getElementById('draw-box');
+  box.style.pointerEvents = 'none';
+  document.getElementById('draw-hint').style.display = 'none';
+  box.classList.add('shaking');
+  const spin = ['🎁','🎊','✨','🎉','🍀','🎁'];
+  let t = 0;
+  const iv = setInterval(() => { box.textContent = spin[t++ % spin.length]; }, 110);
+  setTimeout(() => {
+    clearInterval(iv);
+    box.classList.remove('shaking');
+    revealPrize();
+  }, 1500);
+}
+function revealPrize() {
+  const prize = (currentStudent && currentStudent.prize) ? currentStudent.prize : '';
+  const box = document.getElementById('draw-box');
+  const res = document.getElementById('draw-result');
+  if (prize) {
+    const emo = PRIZE_EMOJI[prize] || '🎁';
+    box.textContent = '🎉';
+    res.innerHTML = `
+      <div class="draw-card draw-win">
+        <div class="dw-emoji">${emo}</div>
+        <div class="dw-title">당첨! ${escapeHtml(prize)}</div>
+        <div class="dw-sub">축하합니다! 🎉</div>
+        <div class="dw-capture">📸 이 화면을 캡쳐해서 교수님께 보내주세요!</div>
+      </div>`;
+  } else {
+    box.textContent = '📦';
+    res.innerHTML = `
+      <div class="draw-card draw-lose">
+        <div class="dw-emoji">😅</div>
+        <div class="dw-title">꽝!</div>
+        <div class="dw-sub">아쉽지만 다음 기회에...<br>그래도 성적은 확인할 수 있어요 :)</div>
+      </div>`;
+  }
+  res.style.display = 'block';
+  // 뽑기 후 답장 단계 노출
+  document.getElementById('reply-section').style.display = 'block';
+  if (currentStudent) { try { localStorage.setItem('grade_draw_'+currentStudent.id, prize || '꽝'); } catch(e){} }
 }
 
 async function submitReply() {
