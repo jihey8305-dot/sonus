@@ -176,6 +176,11 @@
   @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   .fade-up { animation: fadeUp 0.3s ease; }
 
+  /* 캐릭터 마스코트 */
+  .logo-mascot { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; vertical-align: middle; border: 1.5px solid var(--border); }
+  .mascot-vid { width: 116px; height: 116px; border-radius: 50%; object-fit: cover; box-shadow: var(--shadow); background: var(--surface2); }
+  .dw-vid { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; }
+
   @media (max-width: 700px) {
     .add-grid { grid-template-columns: 1fr 1fr; }
     .tab-row, .stats-row { grid-template-columns: 1fr 1fr; }
@@ -186,7 +191,7 @@
 <body>
 
 <header>
-  <div class="logo">📋 성적 공개 시스템</div>
+  <div class="logo"><img src="mascot.png" class="logo-mascot" alt="">성적 공개 시스템</div>
   <span class="mode-badge" id="modeBadge"></span>
 </header>
 
@@ -440,6 +445,9 @@
     <div class="card fade-up">
       <div class="card-header">💌 <h2>성적을 보기 전에</h2></div>
       <div class="card-body">
+        <div style="text-align:center;margin-bottom:16px;">
+          <video class="mascot-vid" src="mascot.mp4" poster="mascot.png" autoplay loop muted playsinline></video>
+        </div>
         <div class="msg-from">교수님이 남긴 메세지</div>
         <div class="msg-box" id="teacher-message"></div>
         <div class="divider"></div>
@@ -973,6 +981,7 @@ function revealPrize() {
     box.textContent = '🎉';
     res.innerHTML = `
       <div class="draw-card draw-win">
+        <video class="dw-vid" src="mascot.mp4" poster="mascot.png" autoplay loop muted playsinline></video>
         <div class="dw-emoji">${emo}</div>
         <div class="dw-title">당첨! ${escapeHtml(prize)}</div>
         <div class="dw-sub">축하합니다! 🎉</div>
