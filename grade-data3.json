@@ -4,12 +4,12 @@
     "maxScore": 40,
     "openUntil": 1792940340000,
     "replyMode": "googleform",
-    "replyEndpoint": "",
+    "replyEndpoint": "https://docs.google.com/forms/d/e/1FAIpQLSf8CI2xsICp7E4XM2GpWbXsKABGXh4N9GO5sJFsEuu7bqekbw/formResponse",
     "gf": {
-      "id": "",
+      "id": "entry.1703198513",
       "name": "",
       "birth": "",
-      "message": ""
+      "message": "entry.1012659717"
     },
     "draws": [
       {
