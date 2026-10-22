@@ -1,0 +1,491 @@
+{
+  "config": {
+    "examTitle": "초음파영상기술학 2학기 중간고사",
+    "maxScore": 40,
+    "openUntil": 1792940340000,
+    "replyMode": "googleform",
+    "replyEndpoint": "",
+    "gf": {
+      "id": "",
+      "name": "",
+      "birth": "",
+      "message": ""
+    },
+    "draws": [
+      {
+        "label": "가산점 1점",
+        "emoji": "✨",
+        "count": 2
+      },
+      {
+        "label": "교수님과 커피타임",
+        "emoji": "☕",
+        "count": 2
+      }
+    ]
+  },
+  "students": [
+    {
+      "cls": "A",
+      "id": "2018121022",
+      "name": "오정택",
+      "score": 21,
+      "birth": "20000220",
+      "birthDisplay": "2000/02/20",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2023121006",
+      "name": "김민준",
+      "score": 20,
+      "birth": "20041109",
+      "birthDisplay": "2004/11/09",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2023121014",
+      "name": "목정빈",
+      "score": 28,
+      "birth": "20040108",
+      "birthDisplay": "2004/01/08",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2023121023",
+      "name": "석재민",
+      "score": 37,
+      "birth": "20040728",
+      "birthDisplay": "2004/07/28",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2023121030",
+      "name": "윤정민",
+      "score": 27,
+      "birth": "20040423",
+      "birthDisplay": "2004/04/23",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2023121037",
+      "name": "정상협",
+      "score": 16,
+      "birth": "20040409",
+      "birthDisplay": "2004/04/09",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121001",
+      "name": "강도영",
+      "score": 30,
+      "birth": "19960316",
+      "birthDisplay": "1996/03/16",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121002",
+      "name": "고지연",
+      "score": 30,
+      "birth": "20020525",
+      "birthDisplay": "2002/05/25",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121004",
+      "name": "권해린",
+      "score": 29,
+      "birth": "20061006",
+      "birthDisplay": "2006/10/06",
+      "gender": "여",
+      "message": "",
+      "prize": "교수님과 커피타임"
+    },
+    {
+      "cls": "A",
+      "id": "2025121010",
+      "name": "문서진",
+      "score": 34,
+      "birth": "20030913",
+      "birthDisplay": "2003/09/13",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121012",
+      "name": "박세영",
+      "score": 16,
+      "birth": "19940630",
+      "birthDisplay": "1994/06/30",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121015",
+      "name": "방정현",
+      "score": 28,
+      "birth": "20010927",
+      "birthDisplay": "2001/09/27",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121019",
+      "name": "오현민",
+      "score": 23,
+      "birth": "20061223",
+      "birthDisplay": "2006/12/23",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121022",
+      "name": "윤은채",
+      "score": 24,
+      "birth": "20051101",
+      "birthDisplay": "2005/11/01",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121025",
+      "name": "이민우",
+      "score": 33,
+      "birth": "20060726",
+      "birthDisplay": "2006/07/26",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121027",
+      "name": "이상린",
+      "score": 26,
+      "birth": "20070302",
+      "birthDisplay": "2007/03/02",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121030",
+      "name": "이유진",
+      "score": 20,
+      "birth": "20030418",
+      "birthDisplay": "2003/04/18",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121032",
+      "name": "이주환",
+      "score": 31,
+      "birth": "20030817",
+      "birthDisplay": "2003/08/17",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121035",
+      "name": "인소민",
+      "score": 21,
+      "birth": "20060925",
+      "birthDisplay": "2006/09/25",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121037",
+      "name": "임소원",
+      "score": 37,
+      "birth": "20001109",
+      "birthDisplay": "2000/11/09",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "A",
+      "id": "2025121045",
+      "name": "한지은",
+      "score": 26,
+      "birth": "19981211",
+      "birthDisplay": "1998/12/11",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2023121005",
+      "name": "김민우",
+      "score": 29,
+      "birth": "20040916",
+      "birthDisplay": "2004/09/16",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2023121012",
+      "name": "김태운",
+      "score": 19,
+      "birth": "20040918",
+      "birthDisplay": "2004/09/18",
+      "gender": "남",
+      "message": "",
+      "prize": "가산점 1점"
+    },
+    {
+      "cls": "B",
+      "id": "2023121015",
+      "name": "박동민",
+      "score": 31,
+      "birth": "20040913",
+      "birthDisplay": "2004/09/13",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2023121026",
+      "name": "오원준",
+      "score": 31,
+      "birth": "20040217",
+      "birthDisplay": "2004/02/17",
+      "gender": "남",
+      "message": "",
+      "prize": "교수님과 커피타임"
+    },
+    {
+      "cls": "B",
+      "id": "2023121034",
+      "name": "이지호",
+      "score": 17,
+      "birth": "20041028",
+      "birthDisplay": "2004/10/28",
+      "gender": "남",
+      "message": "",
+      "prize": "가산점 1점"
+    },
+    {
+      "cls": "B",
+      "id": "2023121042",
+      "name": "최정호",
+      "score": 32,
+      "birth": "20041123",
+      "birthDisplay": "2004/11/23",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2023121045",
+      "name": "황윤찬",
+      "score": 15,
+      "birth": "20030317",
+      "birthDisplay": "2003/03/17",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121003",
+      "name": "구세린",
+      "score": 30,
+      "birth": "20021220",
+      "birthDisplay": "2002/12/20",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121006",
+      "name": "김선영",
+      "score": 29,
+      "birth": "19950901",
+      "birthDisplay": "1995/09/01",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121011",
+      "name": "민대홍",
+      "score": 19,
+      "birth": "20020817",
+      "birthDisplay": "2002/08/17",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121013",
+      "name": "박혁상",
+      "score": 29,
+      "birth": "20000308",
+      "birthDisplay": "2000/03/08",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121014",
+      "name": "방소영",
+      "score": 31,
+      "birth": "20050919",
+      "birthDisplay": "2005/09/19",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121016",
+      "name": "신상연",
+      "score": 16,
+      "birth": "19910619",
+      "birthDisplay": "1991/06/19",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121020",
+      "name": "유덕문",
+      "score": 23,
+      "birth": "20030827",
+      "birthDisplay": "2003/08/27",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121024",
+      "name": "이련주",
+      "score": 33,
+      "birth": "20010515",
+      "birthDisplay": "2001/05/15",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121026",
+      "name": "이민혁",
+      "score": 31,
+      "birth": "20060531",
+      "birthDisplay": "2006/05/31",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121029",
+      "name": "이시연",
+      "score": 20,
+      "birth": "20060121",
+      "birthDisplay": "2006/01/21",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121034",
+      "name": "이혜승",
+      "score": 34,
+      "birth": "20040522",
+      "birthDisplay": "2004/05/22",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121036",
+      "name": "임선아",
+      "score": 33,
+      "birth": "20010924",
+      "birthDisplay": "2001/09/24",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121042",
+      "name": "최예윤",
+      "score": 25,
+      "birth": "19960421",
+      "birthDisplay": "1996/04/21",
+      "gender": "여",
+      "message": "",
+      "prize": ""
+    },
+    {
+      "cls": "B",
+      "id": "2025121044",
+      "name": "최현욱",
+      "score": 24,
+      "birth": "20010528",
+      "birthDisplay": "2001/05/28",
+      "gender": "남",
+      "message": "",
+      "prize": ""
+    }
+  ]
+}
